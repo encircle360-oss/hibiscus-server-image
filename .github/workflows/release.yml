@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check the tag against the Dockerfile
+    if: github.repository == 'encircle360-oss/hibiscus-server-image'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Check the tag against the Dockerfile
+        run: python -m hibiscus_image release-check --ref "$GITHUB_REF"
+
+  signature:
+    name: Signature
+    needs: check
+    uses: $/.github/workflows/signature.yml
+
+  image:
+    name: Image
+    needs: signature
+    permissions:
+      contents: read
+      packages: write # push the image
+      id-token: write # sign the provenance attestation
+      attestations: write # store the provenance attestation
+      security-events: write # upload the vulnerability scan
+    uses: $/.github/workflows/build.yml
+
+  release:
+    name: GitHub release
+    needs: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Download the SBOMs
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: hibiscus-server-*.spdx.json
+          path: ${{ runner.temp }}/sbom
+          merge-multiple: true
+
+      - name: Write the release notes
+        env:
+          # The tags the image was pushed with; a newer release keeps the moving tags it holds.
+          TAGS: ${{ needs.image.outputs.tags }}
+        run: |
+          python -m hibiscus_image summary --tags "$TAGS" > "$RUNNER_TEMP/notes.md"
+          if [[ -f CHANGELOG.md ]]; then
+            # The section whose heading starts with this version, such as "## [2.12.4-1] - 2026-11-27".
+            awk -v version="${GITHUB_REF_NAME#v}" '
+              /^## / {
+                if (found) exit
+                heading = $2
+                gsub(/[][]/, "", heading)
+                sub(/^v/, "", heading)
+                found = heading == version
+                next
+              }
+              found
+            ' CHANGELOG.md > "$RUNNER_TEMP/changes.md"
+            if [[ -s $RUNNER_TEMP/changes.md ]]; then
+              { echo; cat "$RUNNER_TEMP/changes.md"; } >> "$RUNNER_TEMP/notes.md"
+            fi
+          fi
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # One SBOM per platform, such as hibiscus-server-v2.12.4-1-arm64.spdx.json.
+          sboms=()
+          for arch in amd64 arm64; do
+            sboms+=("$RUNNER_TEMP/hibiscus-server-$GITHUB_REF_NAME-$arch.spdx.json")
+            mv "$RUNNER_TEMP/sbom/hibiscus-server-$arch.spdx.json" "${sboms[-1]}"
+          done
+          gh release create "$GITHUB_REF_NAME" "${sboms[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"

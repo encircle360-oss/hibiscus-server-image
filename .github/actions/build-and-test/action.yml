@@ -1,0 +1,117 @@
+name: Build and test the image
+description: >-
+  Builds the image for one platform once into the local Docker engine, runs the image test with it and scans
+  it for vulnerabilities. The jobs test and build of the workflow Image run it once per platform, on a runner
+  of that platform, after the checkout with tags; only the job build has the same build push the image by
+  digest, without a tag. The job publish does not run it, it names the pushed digests under the tags.
+
+inputs:
+  platform:
+    description: The platform to build, test and scan, such as linux/arm64; the runner has to be of that platform
+    required: true
+  local-tag:
+    description: The tag of the image in the local Docker engine, which the image test and the scan use
+    required: true
+  push-to:
+    description: The repository the build also pushes the image to, by digest without a tag; empty pushes none
+    required: false
+    default: ''
+  scan-category:
+    description: The code scanning category of the vulnerability scan, one per platform
+    required: true
+
+outputs:
+  digest:
+    description: The digest under which the build pushed the image to push-to
+    value: ${{ steps.build.outputs.digest }}
+  public:
+    description: Whether the repository is public, which code scanning and attestations need
+    value: ${{ steps.visibility.outputs.public }}
+
+runs:
+  using: composite
+  steps:
+    - name: Plan the build
+      id: plan
+      shell: bash
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          version=$GITHUB_REF_NAME
+        else
+          version=$(git describe --tags --always --dirty)
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "version $version"
+
+    - name: Check whether code scanning and attestations are available
+      # Both are free for public repositories only, and pull requests from forks cannot upload scans.
+      id: visibility
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+      run: |
+        public=false
+        code_scanning=false
+        if [[ $(gh api "repos/$GITHUB_REPOSITORY" --jq .private) == false ]]; then
+          public=true
+          if [[ $GITHUB_EVENT_NAME != pull_request || $HEAD_REPOSITORY == "$GITHUB_REPOSITORY" ]]; then
+            code_scanning=true
+          fi
+        fi
+        echo "public=$public" >> "$GITHUB_OUTPUT"
+        echo "code-scanning=$code_scanning" >> "$GITHUB_OUTPUT"
+
+    - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+    - name: Build the image
+      id: build
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      with:
+        context: .
+        file: Dockerfile
+        platforms: ${{ inputs.platform }}
+        build-args: |
+          VERSION=${{ steps.plan.outputs.version }}
+        # Without a cache every build loads the vendor package again and checks it against HIBISCUS_SHA256, and
+        # the base images come by their digests.
+        no-cache: true
+        # The provenance comes from the attestation of the pushed image.
+        provenance: false
+        # The engine and the registry get the image from this one build. The outputs name their images, as
+        # tags would rename both.
+        outputs: |
+          type=docker,name=${{ inputs.local-tag }}
+          ${{ inputs.push-to && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', inputs.push-to) || '' }}
+
+    - name: Run the image test
+      # Composite steps have no timeout-minutes; the image test stops itself after 15 minutes.
+      shell: bash
+      env:
+        LOCAL_TAG: ${{ inputs.local-tag }}
+      run: ./tests/image/run.sh "$LOCAL_TAG"
+
+    - name: Scan the image for vulnerabilities
+      # A report, not a gate: the findings come from the base image and the libraries of the vendor package
+      # and are fixed by a rebuild or a new release of the vendor, so neither they nor a failing scanner stop
+      # the image.
+      id: scan
+      continue-on-error: true
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      with:
+        image-ref: ${{ inputs.local-tag }}
+        scanners: vuln
+        ignore-unfixed: true
+        severity: HIGH,CRITICAL
+        exit-code: '0'
+        timeout: 15m
+        format: ${{ steps.visibility.outputs.code-scanning == 'true' && 'sarif' || 'table' }}
+        output: ${{ steps.visibility.outputs.code-scanning == 'true' && 'trivy-image.sarif' || '' }}
+        limit-severities-for-sarif: true
+
+    - name: Upload the findings to code scanning
+      if: steps.scan.outcome == 'success' && steps.visibility.outputs.code-scanning == 'true'
+      uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+      with:
+        sarif_file: trivy-image.sarif
+        category: ${{ inputs.scan-category }}
