@@ -16,6 +16,6 @@ Alle nennenswerten Änderungen an hibiscus-server-image stehen in dieser Datei. 
 
 - Kein Test hat einen Bankzugang eingerichtet; Abruf, TAN-Verfahren und Wallet sind ungeprüft.
 - Das Master-Passwort ist der einzige Zugang und öffnet Weboberfläche, REST, SOAP und XML-RPC gleichermaßen.
-- Jetty 9.4.38 von 2021 im Paket; erneuern kann ihn nur der Hersteller.
+- Jetty 9.4.38 von 2021 im Paket; erneuern kann ihn nur der Hersteller. Der Scan mit trivy meldet rund 50 Lücken der Stufen HIGH und CRITICAL in den Bibliotheken des Pakets, darunter Jetty, Bouncy Castle 1.72 und Apache CXF 3.2.6; ihre Ausnutzbarkeit ist nicht geprüft.
 - Das selbst erzeugte Zertifikat hat keinen subjectAlternativeName, sein CN steht nach dem ersten Start fest.
 - Beim Aufruf von `notify.url` über HTTPS akzeptiert Hibiscus Server jedes Zertifikat.
