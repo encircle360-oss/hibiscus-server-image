@@ -1,0 +1,203 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install gitleaks
+        # The digest is the one the release publishes in its checksums file; update both together.
+        env:
+          VERSION: 8.30.1
+          SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --output "$RUNNER_TEMP/gitleaks.tgz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz"
+          echo "$SHA256  $RUNNER_TEMP/gitleaks.tgz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+
+      - name: Scan the whole history for secrets
+        run: |
+          "$RUNNER_TEMP/gitleaks" git --no-banner --redact --exit-code 1 .
+
+  config:
+    name: Configuration scan (trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write # upload the findings to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check whether code scanning is available
+        # Code scanning is free for public repositories only, and pull requests from forks cannot upload to
+        # it. Without code scanning the findings go to the log.
+        id: scanning
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          private=$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)
+          available=false
+          if [[ $private == false && ($GITHUB_EVENT_NAME != pull_request || $HEAD_REPOSITORY == "$GITHUB_REPOSITORY") ]]; then
+            available=true
+          fi
+          echo "available=$available" >> "$GITHUB_OUTPUT"
+
+      - name: Scan the configuration
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          format: ${{ steps.scanning.outputs.available == 'true' && 'sarif' || 'table' }}
+          output: ${{ steps.scanning.outputs.available == 'true' && 'trivy-config.sarif' || '' }}
+          limit-severities-for-sarif: true
+          # This scan needs no vulnerability database. A cache entry from it would carry none either and keep the
+          # image scans of the same day from caching theirs, because the cache key is the date.
+          cache: false
+
+      - name: Upload the findings to code scanning
+        if: ${{ !cancelled() && steps.scanning.outputs.available == 'true' && hashFiles('trivy-config.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy-config
+
+  image:
+    name: Image scan of the latest release (trivy, ${{ matrix.arch }})
+    # A weekly report, not a gate: new vulnerabilities in a published image are fixed by a rebuild or an update.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Code scanning matches the analyses by category: another category for linux/amd64 would leave its
+        # alerts open.
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            category: trivy-image-latest
+          - arch: arm64
+            platform: linux/arm64
+            category: trivy-image-latest-arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read # pull the image from the registry
+      security-events: write # upload the findings to code scanning
+    env:
+      IMAGE: ghcr.io/encircle360-oss/hibiscus-server:latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check whether code scanning is available
+        # Code scanning is free for public repositories only. Without code scanning the findings go to the log.
+        id: scanning
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          private=$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)
+          available=false
+          if [[ $private == false ]]; then
+            available=true
+          fi
+          echo "available=$available" >> "$GITHUB_OUTPUT"
+
+      - name: Check that there is a release
+        # release.yml pushes the latest tag before it creates the release.
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if latest=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name 2>&1); then
+            echo "latest release: $latest"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif [[ $latest == *'(HTTP 404)'* ]]; then
+            echo "::notice::There is no release yet, so there is no image to scan."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$latest" >&2
+            exit 1
+          fi
+
+      - name: Log in to the GitHub Container Registry
+        if: steps.release.outputs.exists == 'true'
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Check that the release has an image for the platform
+        # trivy applies its platform to an index only: an image of one platform would be scanned for the other
+        # platform as well.
+        id: platform
+        if: steps.release.outputs.exists == 'true'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          manifest=$(docker buildx imagetools inspect --format '{{json .Manifest}}' "$IMAGE")
+          if jq --exit-status 'has("manifests")' <<< "$manifest" > /dev/null; then
+            platforms=$(jq --raw-output '.manifests[].platform | "\(.os)/\(.architecture)"' <<< "$manifest")
+          else
+            platforms=$(docker buildx imagetools inspect --format '{{json .Image}}' "$IMAGE" |
+              jq --raw-output '"\(.os)/\(.architecture)"')
+          fi
+          if grep --quiet --fixed-strings --line-regexp "$PLATFORM" <<< "$platforms"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$IMAGE has no image for $PLATFORM, so there is nothing to scan for it."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan the image for vulnerabilities
+        if: steps.platform.outputs.exists == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # The action has no input for the platform; trivy reads it from the environment.
+          TRIVY_PLATFORM: ${{ matrix.platform }}
+        with:
+          image-ref: ${{ env.IMAGE }}
+          scanners: vuln
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+          timeout: 15m
+          format: ${{ steps.scanning.outputs.available == 'true' && 'sarif' || 'table' }}
+          output: ${{ steps.scanning.outputs.available == 'true' && 'trivy-image.sarif' || '' }}
+          limit-severities-for-sarif: true
+
+      - name: Upload the findings to code scanning
+        if: steps.platform.outputs.exists == 'true' && steps.scanning.outputs.available == 'true'
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy-image.sarif
+          category: ${{ matrix.category }}

@@ -1,0 +1,56 @@
+# Checks the PGP signature of the vendor package that the Dockerfile pins, with the key of the vendor.
+#
+# The key comes from keys/hibiscus-server-signing-key.asc when the repository has that file, else from
+# keys.openpgp.org by the fingerprint the vendor publishes on its download pages. scripts/verify-package.sh
+# fails unless the key has exactly that fingerprint, the signature is good and made by that key, and the
+# package has the SHA-256 of the Dockerfile.
+name: Signature
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - keys/**
+      - scripts/verify-package.sh
+      - .github/workflows/signature.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - keys/**
+      - scripts/verify-package.sh
+      - .github/workflows/signature.yml
+  schedule:
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+  # release.yml checks the package of a release with this workflow before it builds.
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signature-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: Signature of the vendor package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install sqv
+        # GnuPG cannot check with a key that has no user ID, which is how keys.openpgp.org hands out keys
+        # whose owner has not confirmed an address; sqv can.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --yes --no-install-recommends sqv
+          sqv --version
+
+      - name: Verify the signature and the SHA-256 of the pinned package
+        shell: bash
+        run: ./scripts/verify-package.sh | tee -a "$GITHUB_STEP_SUMMARY"

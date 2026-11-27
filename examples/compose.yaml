@@ -1,0 +1,66 @@
+# Hibiscus Server with MariaDB, for docker compose.
+#
+# Before the first start, create the three password files next to this file, one line each:
+#   secrets/master-password       the Jameica master password, also the password of the web interface
+#   secrets/db-password           the password of the database user hibiscus
+#   secrets/db-root-password      the root password of MariaDB
+#   mkdir -m 0700 secrets
+#   for f in master-password db-password db-root-password; do openssl rand -base64 32 > "secrets/$f"; done
+#   chmod 0444 secrets/*
+# The containers read the files as uid 65532 (Hibiscus) and 999 (MariaDB); the directory keeps them private
+# on the host.
+name: hibiscus
+
+services:
+  hibiscus:
+    image: ghcr.io/encircle360-oss/hibiscus-server:2
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      HIBISCUS_CERT_HOSTNAME: hibiscus.example.com
+      HIBISCUS_DB_HOST: db
+      HIBISCUS_MASTER_PASSWORD_FILE: /run/secrets/master-password
+      HIBISCUS_DB_PASSWORD_FILE: /run/secrets/db-password
+    secrets:
+      - master-password
+      - db-password
+    volumes:
+      - hibiscus:/data
+    tmpfs:
+      - /tmp:size=64m
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 768m
+    ports:
+      # Only on this machine; other machines reach it through a reverse proxy or not at all.
+      - 127.0.0.1:8080:8080
+
+  db:
+    image: mariadb:11.8
+    restart: unless-stopped
+    # Hibiscus needs the character set utf8 (utf8mb3), not utf8mb4.
+    command: [--character-set-server=utf8mb3, --collation-server=utf8mb3_general_ci]
+    environment:
+      MARIADB_DATABASE: hibiscus
+      MARIADB_USER: hibiscus
+      MARIADB_PASSWORD_FILE: /run/secrets/db-password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db-root-password
+    secrets:
+      - db-password
+      - db-root-password
+    volumes:
+      - db:/var/lib/mysql
+
+secrets:
+  master-password:
+    file: secrets/master-password
+  db-password:
+    file: secrets/db-password
+  db-root-password:
+    file: secrets/db-root-password
+
+volumes:
+  hibiscus:
+  db:

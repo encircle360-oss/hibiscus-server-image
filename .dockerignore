@@ -1,0 +1,5 @@
+# The build reads only these files.
+*
+!launcher/HibiscusLauncher.java
+!LICENSE
+!SOURCES.md

@@ -1,0 +1,3 @@
+# The Dockerfile sets HIBISCUS_MASTER_PASSWORD_FILE, the path of a file on a secret mount, not a secret.
+DS-0031
+AVD-DS-0031

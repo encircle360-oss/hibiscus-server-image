@@ -1,0 +1,288 @@
+name: Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - launcher/**
+      - LICENSE
+      - SOURCES.md
+      - build.sh
+      - hibiscus_image/**
+      - tests/image/**
+      - .github/actions/**
+      - .github/workflows/build.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - launcher/**
+      - LICENSE
+      - SOURCES.md
+      - build.sh
+      - hibiscus_image/**
+      - tests/image/**
+      - .github/actions/**
+      - .github/workflows/build.yml
+  workflow_dispatch:
+  # release.yml builds, tests and publishes a release with this workflow.
+  workflow_call:
+    outputs:
+      tags:
+        description: The image tags the release was pushed with, separated by commas
+        value: ${{ jobs.publish.outputs.tags }}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/encircle360-oss/hibiscus-server
+  LOCAL_TAG: hibiscus-server:ci
+
+jobs:
+  test:
+    name: Build and test (${{ matrix.arch }})
+    # Pull requests, runs by hand and forks build and test without publishing, with a token that can write
+    # nothing but the scan.
+    if: github.event_name != 'push' || github.repository != 'encircle360-oss/hibiscus-server-image'
+    # Each platform builds natively on its own runner, so the image test shows that Hibiscus Server runs on
+    # it. ubuntu-26.04-arm has the Docker of ubuntu-latest: the check of the pushed image reads the image ID,
+    # which depends on the image store of Docker.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+            scan-category: trivy-image
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-26.04-arm
+            scan-category: trivy-image-arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write # upload the vulnerability scan
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # git describe needs the tags for the version label.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Build, test and scan the image
+        uses: $/.github/actions/build-and-test
+        with:
+          platform: ${{ matrix.platform }}
+          local-tag: ${{ env.LOCAL_TAG }}
+          scan-category: ${{ matrix.scan-category }}
+
+      - name: Write the summary
+        run: python -m hibiscus_image summary >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build, test and push (${{ matrix.arch }})
+    # Only pushes publish: to main, and of a release tag after release.yml has checked it. A called workflow
+    # sees the event of its caller. Each platform is pushed by digest only; the job publish names both under
+    # the tags once both have passed the image test.
+    if: github.event_name == 'push' && github.repository == 'encircle360-oss/hibiscus-server-image'
+    strategy:
+      # A release is published for both platforms or for none.
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+            scan-category: trivy-image
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-26.04-arm
+            scan-category: trivy-image-arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # push the image
+      security-events: write # upload the vulnerability scan
+    outputs:
+      public: ${{ steps.image.outputs.public }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # git describe needs the tags for the version label.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build, test and scan the image
+        id: image
+        uses: $/.github/actions/build-and-test
+        with:
+          platform: ${{ matrix.platform }}
+          local-tag: ${{ env.LOCAL_TAG }}
+          push-to: ${{ env.IMAGE }}
+          scan-category: ${{ matrix.scan-category }}
+
+      - name: Check that the pushed image is the tested one
+        # The job publish names the pushed digest under the tags only if it is the image that passed the image
+        # test.
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          tested=$(docker image inspect --format '{{.Id}}' "$LOCAL_TAG")
+          manifest=$(docker buildx imagetools inspect --raw "$IMAGE@$DIGEST")
+          config=$(jq --raw-output .config.digest <<< "$manifest")
+          # The ID of an image is the digest of its manifest in the containerd image store of Docker and the
+          # digest of its config in the classic one.
+          if [[ $tested != "$DIGEST" && $tested != "$config" ]]; then
+            echo "::error::$IMAGE@$DIGEST is not the tested image $tested."
+            exit 1
+          fi
+
+      - name: Keep the digest for the job publish
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          printf '%s\n' "$DIGEST" > "$RUNNER_TEMP/digests/${PLATFORM//\//-}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Create the SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          image: ${{ env.LOCAL_TAG }}
+          format: spdx-json
+          artifact-name: hibiscus-server-${{ matrix.arch }}.spdx.json
+          upload-release-assets: false
+
+  publish:
+    name: Publish the image
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # push the index under the tags
+      id-token: write # sign the provenance attestation
+      attestations: write # store the provenance attestation
+    outputs:
+      tags: ${{ steps.tags.outputs.tags }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The moving tags of the releases need the tags of the repository.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Plan the image tags
+        id: tags
+        run: |
+          tags=$(python -m hibiscus_image tags --ref "$GITHUB_REF" --sha "$GITHUB_SHA" --existing "$(git tag -l 'v*')")
+          if [[ -z $tags ]]; then
+            echo "::error::$GITHUB_REF has no image tags to publish."
+            exit 1
+          fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+          echo "publishing $tags"
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: digest-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Push one index for both platforms under the tags
+        id: index
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+        run: |
+          digests=()
+          for platform in linux-amd64 linux-arm64; do
+            digests+=("$IMAGE@$(cat "$RUNNER_TEMP/digests/$platform")")
+          done
+          tag_args=()
+          IFS=, read -ra tags <<< "$TAGS"
+          for tag in "${tags[@]}"; do
+            tag_args+=(--tag "$tag")
+          done
+          # GHCR describes an image for several platforms by the annotations of its index, not by the labels.
+          labels=$(docker buildx imagetools inspect --format '{{json .Image.Config.Labels}}' "${digests[0]}")
+          annotation_args=()
+          for key in description source licenses; do
+            value=$(jq --raw-output --arg key "org.opencontainers.image.$key" '.[$key] // ""' <<< "$labels")
+            if [[ -n $value ]]; then
+              annotation_args+=(--annotation "index:org.opencontainers.image.$key=$value")
+            fi
+          done
+          docker buildx imagetools create "${tag_args[@]}" "${annotation_args[@]}" "${digests[@]}"
+
+          # The index has to name exactly the two tested images, one per platform.
+          manifest=$(docker buildx imagetools inspect --format '{{json .Manifest}}' "${tags[0]}")
+          expected=$(jq --null-input --compact-output '$ARGS.positional | sort' --args "${digests[@]#"$IMAGE@"}")
+          if ! jq --exit-status --argjson expected "$expected" \
+            '([.manifests[].digest] | sort) == $expected
+              and ([.manifests[].platform | "\(.os)/\(.architecture)"] | sort) == ["linux/amd64", "linux/arm64"]' \
+            <<< "$manifest" > /dev/null; then
+            echo "::error::${tags[0]} does not name exactly the tested images of linux/amd64 and linux/arm64."
+            exit 1
+          fi
+
+          # gh attestation verify looks the attestation up by the digest a reference resolves to: the index for
+          # a tag, one image for the digest of its platform. One attestation names all three.
+          for digest in "$(jq --raw-output .digest <<< "$manifest")" "${digests[@]#"$IMAGE@"}"; do
+            printf '%s  %s\n' "${digest#sha256:}" "$IMAGE"
+          done > "$RUNNER_TEMP/attestation-subjects"
+
+      - name: Attest the build provenance of the index and both images
+        if: needs.build.outputs.public == 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/attestation-subjects
+
+      - name: Write the summary
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+        run: python -m hibiscus_image summary --tags "$TAGS" >> "$GITHUB_STEP_SUMMARY"

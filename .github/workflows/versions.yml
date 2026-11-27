@@ -1,0 +1,130 @@
+# Opens a pull request when the vendor has published a newer release of Hibiscus Server, or an issue when the
+# signature of that release cannot be confirmed.
+#
+# The vendor has no machine-readable version file; the download page links the current release. Two things a
+# maintainer has to know:
+# - The repository setting "Allow GitHub Actions to create and approve pull requests" (Settings > Actions >
+#   General > Workflow permissions) must be on; without it, `gh pr create` is refused.
+# - A pull request opened with the GITHUB_TOKEN does not start its checks on its own: they wait until a
+#   maintainer selects "Approve workflows to run" in the pull request, or closes and reopens it.
+name: Vendor release
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vendor-release
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Look for a new release of Hibiscus Server
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # push the update branch
+      pull-requests: write # open the pull request
+      issues: write # report a release whose signature fails
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Compare the pinned release with the download page
+        id: compare
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --output "$RUNNER_TEMP/download.php" \
+            https://www.willuhn.de/products/hibiscus-server/download.php
+          pinned=$(python -m hibiscus_image version)
+          latest=$(python -m hibiscus_image latest "$RUNNER_TEMP/download.php")
+          newer=$(python -m hibiscus_image newer "$RUNNER_TEMP/download.php")
+          echo "pinned $pinned, newest on the download page $latest" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "version=$newer" >> "$GITHUB_OUTPUT"
+
+      - name: Install sqv
+        if: steps.compare.outputs.version != ''
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --yes --no-install-recommends sqv
+
+      - name: Verify the signature of the new release
+        id: verify
+        if: steps.compare.outputs.version != ''
+        shell: bash
+        env:
+          VERSION: ${{ steps.compare.outputs.version }}
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --output "$RUNNER_TEMP/package.SHA-256" \
+            "https://www.willuhn.de/products/hibiscus-server/releases/hibiscus-server-$VERSION.zip.SHA-256"
+          sha256=$(python -m hibiscus_image checksum "$RUNNER_TEMP/package.SHA-256" --version "$VERSION")
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          if ./scripts/verify-package.sh --version "$VERSION" --sha256 "$sha256" > "$RUNNER_TEMP/verify.log" 2>&1; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+          fi
+          tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/verify.log"
+
+      - name: Open the pull request
+        if: steps.verify.outputs.verified == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.compare.outputs.version }}
+          SHA256: ${{ steps.verify.outputs.sha256 }}
+        run: |
+          branch="update/hibiscus-server-$VERSION"
+          gh auth setup-git
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            echo "::notice::The branch $branch exists already; merge or close its pull request first."
+            exit 0
+          fi
+          python -m hibiscus_image bump --version "$VERSION" --sha256 "$SHA256"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch --create "$branch"
+          git add Dockerfile
+          git commit --message "pin hibiscus server $VERSION"
+          git push origin "$branch"
+          {
+            cat <<BODY
+          Der Hersteller hat Hibiscus Server $VERSION veröffentlicht. Dieser Pull Request setzt \`HIBISCUS_VERSION\` und \`HIBISCUS_SHA256\` im \`Dockerfile\` auf das neue Paket. Die PGP-Signatur des Pakets ist mit dem Schlüssel des Herstellers geprüft, die SHA-256-Summe stammt aus seiner Datei \`.SHA-256\`.
+
+          Vor dem Merge: den [Changelog des Herstellers](https://www.willuhn.de/products/hibiscus-server/changelog.php) lesen, die Versionen der Bestandteile in \`SOURCES.md\`, im README und in \`docs/architektur.md\` nachziehen (die Tests schlagen fehl, bis sie stimmen), den Changelog ergänzen und den Image-Test abwarten. Die Checks dieses Pull Requests starten erst, wenn ein Maintainer sie mit „Approve workflows to run“ freigibt.
+
+          BODY
+            echo '```text'
+            cat "$RUNNER_TEMP/verify.log"
+            echo '```'
+          } > "$RUNNER_TEMP/body.md"
+          gh pr create --base main --head "$branch" --title "Hibiscus Server $VERSION" --body-file "$RUNNER_TEMP/body.md"
+
+      - name: Report a release whose signature fails
+        if: steps.verify.outputs.verified == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.compare.outputs.version }}
+        run: |
+          title="Signatur von Hibiscus Server $VERSION nicht bestätigt"
+          if [[ -n $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[].number') ]]; then
+            echo "::notice::The issue \"$title\" is open already."
+            exit 0
+          fi
+          {
+            echo "Auf der Download-Seite des Herstellers steht Hibiscus Server $VERSION, aber die Prüfung der Signatur ist fehlgeschlagen. Das Paket wird nicht übernommen, bis ein Maintainer die Ursache geklärt hat, siehe [Sicherheit](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/sicherheit.md#signatur-des-herstellers)."
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/verify.log"
+            echo '```'
+          } > "$RUNNER_TEMP/issue.md"
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/issue.md"
+          exit 1

@@ -1,0 +1,74 @@
+version: 2
+
+# ruff and zizmor are pinned twice, in requirements-dev.txt and as pre-commit hooks. One pull request for
+# both ecosystems moves them together; the tests fail while the two pins disagree.
+multi-ecosystem-groups:
+  development-tools:
+    schedule:
+      interval: weekly
+
+updates:
+  # The workflows and the composite action they share.
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    # A week gives a compromised release time to be noticed and pulled before it lands here.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']
+    labels: []
+
+  # Both FROMs of the Dockerfile, by tag and digest.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      # The vendor package runs on Java 21 here; another Java version is a decision, not an update.
+      - dependency-name: eclipse-temurin
+        update-types: ['version-update:semver-major']
+    labels: []
+
+  # The database of the compose example.
+  - package-ecosystem: docker-compose
+    directory: /examples
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      # A new major version of MariaDB is a decision, not an update.
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+      # The example runs the image of this repository on its moving tag on purpose. Dependabot names the
+      # image without its registry.
+      - dependency-name: encircle360-oss/hibiscus-server
+    labels: []
+
+  - package-ecosystem: pip
+    directory: /
+    multi-ecosystem-group: development-tools
+    patterns: ['*']
+    cooldown:
+      default-days: 7
+    labels: []
+
+  - package-ecosystem: pre-commit
+    directory: /
+    multi-ecosystem-group: development-tools
+    patterns: ['*']
+    cooldown:
+      default-days: 7
+    ignore:
+      # shellcheck-py tagged v0.11.0.1-1 a year after v0.11.0.1. Dependabot reads the suffix as a pre-release
+      # and proposes the older tag as an update.
+      - dependency-name: https://github.com/shellcheck-py/shellcheck-py
+        versions: ['0.11.0.1']
+    labels: []

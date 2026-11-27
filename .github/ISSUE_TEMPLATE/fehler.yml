@@ -1,0 +1,68 @@
+name: Fehler melden
+description: Das Image, der Einstiegspunkt, das Beispiel oder die Werkzeuge verhalten sich falsch.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bitte keine Passwörter, PINs, TANs, Schlüssel, Kontonummern, IBANs, Umsätze, Inhalte von `/data` oder Sicherungen einfügen. Logs vorher durchsehen.
+
+        Fehler von Hibiscus selbst gehören zum Hersteller, siehe seine Support-Seite. Hierher gehören Fehler im Image, im Einstiegspunkt, im Beispiel, in den Werkzeugen und in der Dokumentation.
+  - type: textarea
+    id: beobachtet
+    attributes:
+      label: Was passiert?
+      description: Beobachtetes Verhalten oder Fehlermeldung.
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Was sollte passieren?
+      description: Erwartetes Verhalten, möglichst mit Quelle (Dokumentation dieses Repositories oder des Herstellers).
+    validations:
+      required: true
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte zum Nachstellen
+      description: Befehle und Einstellungen (Umgebungsvariablen ohne Geheimnisse), mit denen der Fehler auftritt.
+  - type: input
+    id: tag
+    attributes:
+      label: Image-Tag
+      description: Das volle Tag oder der Digest, etwa 2.12.4-1 oder sha256:…
+    validations:
+      required: true
+  - type: dropdown
+    id: betrieb
+    attributes:
+      label: Betrieb
+      options:
+        - docker run
+        - docker compose mit examples/compose.yaml
+        - docker compose mit eigener Datei
+        - Kubernetes
+        - Eigener Build mit build.sh
+        - Sonstiges
+    validations:
+      required: true
+  - type: dropdown
+    id: datenbank
+    attributes:
+      label: Datenbank
+      options:
+        - H2 (eingebettet)
+        - MariaDB
+        - Weiß nicht
+  - type: input
+    id: host
+    attributes:
+      label: Host-System
+      description: Betriebssystem, Architektur und Version von Docker oder Kubernetes.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Ausgabe von docker logs oder kubectl logs, ohne Geheimnisse und ohne Kontodaten.
+      render: shell
