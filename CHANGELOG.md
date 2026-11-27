@@ -4,6 +4,8 @@ Alle nennenswerten Änderungen an hibiscus-server-image stehen in dieser Datei. 
 
 ## Unveröffentlicht
 
+## [2.12.4-1] - 2026-11-27
+
 ### Hinzugefügt
 
 - Image `ghcr.io/encircle360-oss/hibiscus-server` aus dem Release-Paket `hibiscus-server-2.12.4.zip` des Herstellers (Jameica 2.12.0, Hibiscus und Hibiscus Server 2.12.4), geprüft per SHA-256 beim Build und per PGP-Signatur in der CI, auf `gcr.io/distroless/java21-debian12:nonroot` mit uid 65532, für `linux/amd64` und `linux/arm64`.

@@ -6,7 +6,7 @@
 
 > **Ohne Gewähr.** Das Image wird ohne jede Gewährleistung bereitgestellt, Nutzung auf eigenes Risiko. Wer es betreibt, ist für die Sicherheit der Bankzugangsdaten und der Installation verantwortlich. Einzelheiten unter [Haftungsausschluss](#haftungsausschluss).
 
-> **Status: erste Version, noch kein Release.** Rezept, Einstiegspunkt und Tests stehen; ein Image unter `ghcr.io/encircle360-oss/hibiscus-server` gibt es erst mit dem ersten Release. Bis dahin baut man es selbst, siehe [Eigener Build](#eigener-build). Kein Test hat je einen Bankzugang eingerichtet, siehe [Was getestet ist](#was-getestet-ist-und-was-nicht).
+> **Status: erstes Release, frühes Stadium.** Das Image `ghcr.io/encircle360-oss/hibiscus-server:2.12.4-1` besteht den Image-Test der CI auf `linux/amd64` und `linux/arm64`. Kein Test hat je einen Bankzugang eingerichtet, siehe [Was getestet ist](#was-getestet-ist-und-was-nicht).
 
 ## Was hibiscus-server-image ist
 
@@ -19,7 +19,7 @@
 
 ## Schnellstart
 
-Du brauchst Docker auf `linux/amd64` oder `linux/arm64`. Bis zum ersten Release ersetzt du `ghcr.io/encircle360-oss/hibiscus-server:2` durch ein selbst gebautes `hibiscus-server:local`.
+Du brauchst Docker auf `linux/amd64` oder `linux/arm64`.
 
 1. Lege das Master-Passwort in eine Datei. Es verschlüsselt Schlüssel, Wallet und Datenbank und ist zugleich das Passwort der Weboberfläche und aller Schnittstellen. Geht es verloren, ist die Einrichtung der Bankzugänge verloren.
 
