@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Fragen zu Hibiscus selbst
+    url: https://www.willuhn.de/products/hibiscus-server/support.php
+    about: Einrichtung von Bankzugängen, TAN-Verfahren und Fehler von Hibiscus gehören zu Forum und Wiki des Herstellers. Dieses Image ist inoffiziell.
+  - name: Fragen und Austausch zum Image
+    url: https://github.com/encircle360-oss/hibiscus-server-image/discussions
+    about: Für Fragen zu Betrieb, Updates und Einrichtung des Images.
+  - name: Matrix
+    url: https://matrix.to/#/#oss:encircle360.com
+    about: Für den direkten Austausch mit Maintainern und Nutzern.
+  - name: Sicherheitslücke melden
+    url: https://github.com/encircle360-oss/hibiscus-server-image/blob/main/SECURITY.md
+    about: Bitte nicht als öffentliches Issue, sondern wie in SECURITY.md beschrieben.

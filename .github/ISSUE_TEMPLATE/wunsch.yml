@@ -1,0 +1,29 @@
+name: Funktion vorschlagen
+description: Eine Einstellung, ein Beispiel oder etwas am Image fehlt.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem soll gelöst werden?
+    validations:
+      required: true
+  - type: textarea
+    id: vorschlag
+    attributes:
+      label: Vorschlag
+      description: Wie könnte die Lösung aussehen? Für eine neue Einstellung bitte die Datei und den Schlüssel von Jameica oder Hibiscus nennen, wenn bekannt.
+  - type: dropdown
+    id: bereich
+    attributes:
+      label: Bereich
+      options:
+        - Image und Rezept
+        - Einstiegspunkt und Einstellungen
+        - Betrieb mit docker compose
+        - Betrieb auf Kubernetes
+        - Sicherheit
+        - Versionen und Updates
+        - Werkzeuge und CI
+        - Dokumentation
+        - Sonstiges
