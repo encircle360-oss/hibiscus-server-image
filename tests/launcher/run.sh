@@ -33,7 +33,8 @@ mkdir -p "$build"
 fetch() {
 	local name=$1 path=$2 sha256=$3
 	if [[ ! -f "$cache/$name" ]]; then
-		curl --fail --silent --show-error --location --retry 3 --output "$cache/$name.part" "$MAVEN/$path"
+		curl --fail --silent --show-error --location --retry 8 --retry-max-time 300 \
+			--output "$cache/$name.part" "$MAVEN/$path"
 		mv "$cache/$name.part" "$cache/$name"
 	fi
 	if ! echo "$sha256  $cache/$name" | sha256sum --check --strict --quiet; then

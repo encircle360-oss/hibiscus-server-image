@@ -4,6 +4,10 @@ Alle nennenswerten Änderungen an hibiscus-server-image stehen in dieser Datei. 
 
 ## Unveröffentlicht
 
+### Behoben
+
+- Die Tests des Einstiegspunkts scheitern nicht mehr, wenn Maven Central den Runner drosselt (HTTP 429): Die CI hält die drei Test-Werkzeuge im Cache, und der Abruf versucht es länger. Geprüft wird jede Datei weiter bei jedem Lauf gegen ihre gepinnte SHA-256-Summe.
+
 ## [2.12.4-1] - 2026-11-27
 
 ### Hinzugefügt
