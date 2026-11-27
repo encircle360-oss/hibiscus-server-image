@@ -1,0 +1,63 @@
+[project]
+name = "hibiscus-server-image-tools"
+version = "0.0.0"
+authors = [{ name = "encircle360 GmbH", email = "oss@encircle360.com" }]
+description = "Tools that check, tag and update the recipe of the Hibiscus Server image"
+requires-python = ">=3.14"
+readme = "README.md"
+license = "GPL-2.0-or-later WITH Classpath-exception-2.0"
+license-files = ["LICENSE"]
+# The tools run from the repository root with the standard library only; requirements-dev.txt pins the
+# tools that check them.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/encircle360-oss/hibiscus-server-image"
+Repository = "https://github.com/encircle360-oss/hibiscus-server-image.git"
+Documentation = "https://github.com/encircle360-oss/hibiscus-server-image#readme"
+Issues = "https://github.com/encircle360-oss/hibiscus-server-image/issues"
+
+[tool.ruff]
+line-length = 110
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+  "F",   # pyflakes
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "I",   # import order
+  "UP",  # modern syntax
+  "B",   # bugbear
+  "RUF", # ruff's own rules
+  "S",   # bandit security checks
+  "SIM", # simplifications
+  "C4",  # comprehensions
+  "T20", # no print statements in library code
+]
+ignore = [
+  "E101", # indentation contains mixed spaces and tabs (the code uses tabs)
+  "W191", # indentation contains tabs
+  "E501", # line length is enforced by the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"hibiscus_image/__main__.py" = ["T201"] # the command line prints its results
+"tests/*.py" = ["S101"] # assert is fine in tests
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The tools are not installed; the tests import them from the repository root.
+pythonpath = ["."]
+addopts = "--strict-markers --cov=hibiscus_image --cov-fail-under=100"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
