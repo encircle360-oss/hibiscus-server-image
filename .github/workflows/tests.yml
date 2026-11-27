@@ -50,6 +50,14 @@ jobs:
         with:
           persist-credentials: false
 
+      # Maven Central limits how often a runner may fetch; the jars are checked against their pinned SHA-256
+      # on every run, whether they come from the cache or from the network.
+      - name: Restore the test tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/launcher-tests
+          key: launcher-test-tools-${{ hashFiles('tests/launcher/run.sh') }}
+
       - name: Run the tests of the entry point with full coverage
         # The tests compile and run inside the JDK image of the build stage of the Dockerfile.
         run: ./tests/launcher/run.sh
