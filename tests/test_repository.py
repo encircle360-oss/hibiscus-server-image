@@ -6,11 +6,13 @@ from pathlib import Path
 import pytest
 
 from hibiscus_image.dockerfile import base_images, hibiscus_sha256, hibiscus_version, split_digest
+from hibiscus_image.sources import FILE, GIT, parse
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = (ROOT / "Dockerfile").read_text(encoding="utf-8")
 WORKFLOWS = sorted((ROOT / ".github").rglob("*.yml"))
 FINGERPRINT = "7314FBDE7D38EE5610D291B65A8ED9CFC0DB6C70"
+SOURCE_LIST = parse((ROOT / "sources.json").read_text(encoding="utf-8"))
 
 
 def read(name: str) -> str:
@@ -83,3 +85,64 @@ def test_the_signing_key_has_one_fingerprint(name):
 	text = read(name).replace(" ", "")
 	assert FINGERPRINT in text
 	assert not re.search(r"[0-9A-F]{40}", text.replace(FINGERPRINT, ""))
+
+
+def table_rows(name: str) -> list[str]:
+	return [line for line in read(name).splitlines() if line.startswith("| ") and not line.startswith("|---")]
+
+
+def cells(row: str) -> list[str]:
+	return [cell.strip() for cell in row.strip().strip("|").split("|")]
+
+
+def test_the_source_list_belongs_to_the_pinned_package():
+	# A new package needs a new source list; the list cannot follow the Dockerfile without a review.
+	version = hibiscus_version(DOCKERFILE)
+	assert SOURCE_LIST.package_version == version
+	by_name = {component.name: component for component in SOURCE_LIST.components}
+	for name in ("hibiscus", "hibiscus.server"):
+		# The vendor keeps a branch per version instead of a tag.
+		assert (by_name[name].version, by_name[name].ref) == (version, version), name
+
+
+def test_every_file_of_the_source_list_names_its_version_in_its_address():
+	for component in SOURCE_LIST.components:
+		if component.kind == FILE:
+			assert component.version in component.origin, component.name
+			assert not component.coordinates or component.coordinates.endswith(f":{component.version}")
+
+
+def test_sources_md_names_every_git_component_with_version_ref_and_commit():
+	rows = table_rows("SOURCES.md")
+	for component in (component for component in SOURCE_LIST.components if component.kind == GIT):
+		matching = [row for row in rows if f"]({component.origin})" in row]
+		assert len(matching) == 1, f"SOURCES.md needs one row that links {component.origin}"
+		row = cells(matching[0])
+		assert component.version in row[1], f"{component.name}: version {component.version}"
+		assert f"`{component.ref}`" in row[3], f"{component.name}: ref {component.ref}"
+		assert f"`{component.pin}`" in row[4], f"{component.name}: commit {component.pin}"
+
+
+def test_sources_md_names_every_file_component_with_its_version():
+	rows = table_rows("SOURCES.md")
+	for component in (component for component in SOURCE_LIST.components if component.kind == FILE):
+		key = f"`{component.coordinates}`" if component.coordinates else f"]({component.origin})"
+		matching = [row for row in rows if key in row]
+		assert len(matching) == 1, f"SOURCES.md needs one row with {key}"
+		assert component.version in cells(matching[0])[2], f"{component.name}: version {component.version}"
+
+
+def test_sources_md_names_nothing_that_the_source_list_lacks():
+	text = read("SOURCES.md")
+	listed = {component.coordinates for component in SOURCE_LIST.components if component.coordinates}
+	assert set(re.findall(r"`([\w.-]+:[\w.-]+:[\w.-]+)`", text)) == listed
+	commits = {component.pin for component in SOURCE_LIST.components if component.kind == GIT}
+	assert set(re.findall(r"`([0-9a-f]{40})`", text)) == commits
+
+
+def test_sources_md_names_what_the_archive_lacks():
+	text = read("SOURCES.md")
+	for gap in SOURCE_LIST.missing:
+		assert f"`{gap.name}`" in text, gap.name
+		for path in gap.paths:
+			assert f"`{path}`" in text, f"{gap.name}: {path}"

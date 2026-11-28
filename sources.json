@@ -1,0 +1,658 @@
+{
+  "package": {
+    "version": "2.12.4"
+  },
+  "components": [
+    {
+      "name": "jameica",
+      "kind": "git",
+      "version": "2.12.0",
+      "paths": [
+        "jameica.jar",
+        "jameica-linux64.jar",
+        "plugin.xml",
+        "lib/paperclips/net.sf.paperclips_1.0.4.jar",
+        "lib/swtcalendar/swtcalendar.jar",
+        "lib/nanoxml/nanoxml-2.2.3.jar"
+      ],
+      "license": "GPL-2.0-or-later WITH Classpath-exception-2.0",
+      "repository": "https://github.com/willuhn/jameica",
+      "ref": "2.12.0",
+      "commit": "d4e8b0ba20af08b3cff9bdd7257349229f23f2a4",
+      "note": "the repository also holds the sources of PaperClips 1.0.4 (without its ui part), SWTCalendar and NanoXML 2.2.3 under lib.src/"
+    },
+    {
+      "name": "hibiscus",
+      "kind": "git",
+      "version": "2.12.4",
+      "paths": [
+        "plugins/hibiscus"
+      ],
+      "license": "GPL-2.0-or-later WITH Classpath-exception-2.0",
+      "repository": "https://github.com/willuhn/hibiscus",
+      "ref": "2.12.4",
+      "commit": "2f6108669ad6a9b720d357be1d963af2efd655a9"
+    },
+    {
+      "name": "hibiscus.server",
+      "kind": "git",
+      "version": "2.12.4",
+      "paths": [
+        "plugins/hibiscus.server"
+      ],
+      "license": "GPL-2.0-or-later WITH Classpath-exception-2.0",
+      "repository": "https://github.com/willuhn/hibiscus.server",
+      "ref": "2.12.4",
+      "commit": "7ca698ef2ed960ed8bd0bbc0c87bf6cdad98c2fc"
+    },
+    {
+      "name": "hibiscus.xmlrpc",
+      "kind": "git",
+      "version": "2.11.0-nightly",
+      "paths": [
+        "plugins/hibiscus.xmlrpc"
+      ],
+      "license": "GPL-2.0 (COPYING of the plugin)",
+      "repository": "https://github.com/willuhn/hibiscus.xmlrpc",
+      "ref": "master",
+      "commit": "556dfef174405638f16eea6a054b885bafa2ede7",
+      "note": "state of master at the build date 2026-05-05; the package names no commit"
+    },
+    {
+      "name": "hibiscus.soap",
+      "kind": "git",
+      "version": "2.11.0-nightly",
+      "paths": [
+        "plugins/hibiscus.soap"
+      ],
+      "license": "GPL-2.0 (COPYING of the plugin)",
+      "repository": "https://github.com/willuhn/hibiscus.soap",
+      "ref": "master",
+      "commit": "dde005b67cee6f84939016f6d05df18578184bda",
+      "note": "state of master at the build date 2026-05-05; the package names no commit"
+    },
+    {
+      "name": "jameica.webadmin",
+      "kind": "git",
+      "version": "2.11.0-nightly",
+      "paths": [
+        "plugins/jameica.webadmin"
+      ],
+      "license": "GPL-2.0 (COPYING of the plugin)",
+      "repository": "https://github.com/willuhn/jameica.webadmin",
+      "ref": "master",
+      "commit": "f9722e17f3dfa55e6c0718970b9452aa94cfecd2",
+      "note": "state of master at the build date 2026-05-05; the package names no commit"
+    },
+    {
+      "name": "jameica.xmlrpc",
+      "kind": "git",
+      "version": "2.11.0-nightly",
+      "paths": [
+        "plugins/jameica.xmlrpc"
+      ],
+      "license": "GPL-2.0 (COPYING of the plugin)",
+      "repository": "https://github.com/willuhn/jameica.xmlrpc",
+      "ref": "master",
+      "commit": "2f6a635402dfbdb4376ed0e7e5b2bd1472b5b2db",
+      "note": "state of master at the build date 2026-05-05; the package names no commit"
+    },
+    {
+      "name": "jameica.soap",
+      "kind": "git",
+      "version": "2.11.0-nightly",
+      "paths": [
+        "plugins/jameica.soap"
+      ],
+      "license": "GPL-2.0 (COPYING of the plugin)",
+      "repository": "https://github.com/willuhn/jameica.soap",
+      "ref": "master",
+      "commit": "ce16b5af0ad6a257d0ab37da5f6730f122947eed",
+      "note": "state of master at the build date 2026-05-05; the package names no commit"
+    },
+    {
+      "name": "jameica.sensors",
+      "kind": "git",
+      "version": "2.11.0-nightly",
+      "paths": [
+        "plugins/jameica.sensors"
+      ],
+      "license": "GPL-2.0 (COPYING of the plugin)",
+      "repository": "https://github.com/willuhn/jameica.sensors",
+      "ref": "master",
+      "commit": "5011efdae43eab346de4ff655b079ed3b509ab82",
+      "note": "state of master at the build date 2026-05-05; the package names no commit"
+    },
+    {
+      "name": "hbci4j-core",
+      "kind": "git",
+      "version": "4.1.10",
+      "paths": [
+        "plugins/hibiscus/lib/hbci4j-core-4.1.10.jar",
+        "plugins/hibiscus/lib/libhbci4java-card-linux-64.so",
+        "plugins/hibiscus/lib/libhbci4java-card-linux-32.so",
+        "plugins/hibiscus/lib/libhbci4java-card-mac.jnilib",
+        "plugins/hibiscus/lib/libhbci4java-card-mac-os-x-10.6.jnilib",
+        "plugins/hibiscus/lib/hbci4java-card-win32.dll",
+        "plugins/hibiscus/lib/hbci4java-card-win32_x86-64.dll"
+      ],
+      "license": "LGPL-2.1",
+      "repository": "https://github.com/hbci4j/hbci4java",
+      "ref": "hbci4j-core-4.1.10",
+      "commit": "67e401f1b2ce461cbe449ad303464454116f75dd",
+      "note": "the native card libraries are the files under chipcard/lib/ of the repository, built from chipcard/src/"
+    },
+    {
+      "name": "de_willuhn_util",
+      "kind": "git",
+      "version": "2.8",
+      "paths": [
+        "lib/de_willuhn_util/de_willuhn_util.jar"
+      ],
+      "license": "LGPL-2.1",
+      "repository": "https://github.com/willuhn/util",
+      "ref": "V_2_8_BUILD_219",
+      "commit": "c991cf681919d5dfe1634a3f164b245bb684bb1c"
+    },
+    {
+      "name": "de_willuhn_ds",
+      "kind": "git",
+      "version": "2.8.1",
+      "paths": [
+        "lib/de_willuhn_ds/de_willuhn_ds.jar"
+      ],
+      "license": "LGPL-2.1",
+      "repository": "https://github.com/willuhn/datasource",
+      "ref": "master",
+      "commit": "e5a9a48ead34a387ad01951e79eef5f4eab6d68e",
+      "note": "state of master at the build date 2025-08-28 (build 221); the package names no commit"
+    },
+    {
+      "name": "obantoo",
+      "kind": "git",
+      "version": "2.1.12",
+      "paths": [
+        "plugins/hibiscus/lib/obantoo-bin-2.1.12.jar"
+      ],
+      "license": "LGPL",
+      "repository": "https://github.com/willuhn/obantoo",
+      "ref": "main",
+      "commit": "902a6df35dcdb4462ac688718a85bd76aae30b14",
+      "note": "state of main at the build date 2026-02-04; the package names no commit"
+    },
+    {
+      "name": "h2",
+      "kind": "file",
+      "version": "2.3.232",
+      "paths": [
+        "lib/h2/migration-h2/enabled/h2-2.3.232.jar"
+      ],
+      "license": "MPL-2.0 OR EPL-1.0",
+      "coordinates": "com.h2database:h2:2.3.232",
+      "url": "https://repo1.maven.org/maven2/com/h2database/h2/2.3.232/h2-2.3.232-sources.jar",
+      "sha256": "8de73d362ee52d3b97bf0f61dd99f2003757f27d41bae12b725d30658a504a51"
+    },
+    {
+      "name": "h2-migration",
+      "kind": "file",
+      "version": "1.4.199",
+      "paths": [
+        "lib/h2/migration-h2/disabled/h2-1.4.199.jar",
+        "lib/h2/migration-h2/enabled/h2-1.4.199-fork.jar"
+      ],
+      "license": "MPL-2.0 OR EPL-1.0",
+      "coordinates": "com.h2database:h2:1.4.199",
+      "url": "https://repo1.maven.org/maven2/com/h2database/h2/1.4.199/h2-1.4.199-sources.jar",
+      "sha256": "88b730bd05e6be6186e814e04aeafc08b119ce0c394cea9e7ed3cec5e7330ac5"
+    },
+    {
+      "name": "mariadb-java-client",
+      "kind": "file",
+      "version": "3.5.1",
+      "paths": [
+        "lib/mariadb/mariadb-java-client-3.5.1.jar"
+      ],
+      "license": "LGPL-2.1-or-later",
+      "coordinates": "org.mariadb.jdbc:mariadb-java-client:3.5.1",
+      "url": "https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/3.5.1/mariadb-java-client-3.5.1-sources.jar",
+      "sha256": "ac9f7e3bcd1f7f137b11164ba5017114b5cdc7d7d28ef762decd8f6937d690a0"
+    },
+    {
+      "name": "mysql-connector-j",
+      "kind": "file",
+      "version": "9.2.0",
+      "paths": [
+        "lib/mysql/mysql-connector-j-9.2.0.jar"
+      ],
+      "license": "GPL-2.0-only WITH Universal-FOSS-exception-1.0",
+      "coordinates": "com.mysql:mysql-connector-j:9.2.0",
+      "url": "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.2.0/mysql-connector-j-9.2.0-sources.jar",
+      "sha256": "7d530d643fdd190add45de5fdd17c3281acbcd5b003e1607d67e31511117db7b"
+    },
+    {
+      "name": "rhino",
+      "kind": "file",
+      "version": "1.7.14",
+      "paths": [
+        "lib/mozilla_rhino/rhino-1.7.14.jar"
+      ],
+      "license": "MPL-2.0",
+      "coordinates": "org.mozilla:rhino:1.7.14",
+      "url": "https://repo1.maven.org/maven2/org/mozilla/rhino/1.7.14/rhino-1.7.14-sources.jar",
+      "sha256": "9cfd3cba807b803e137400df140a2891b63ceb6d1771ef0198d48a6006a06331"
+    },
+    {
+      "name": "rhino-engine",
+      "kind": "file",
+      "version": "1.7.14",
+      "paths": [
+        "lib/mozilla_rhino/rhino-engine-1.7.14.jar"
+      ],
+      "license": "MPL-2.0",
+      "coordinates": "org.mozilla:rhino-engine:1.7.14",
+      "url": "https://repo1.maven.org/maven2/org/mozilla/rhino-engine/1.7.14/rhino-engine-1.7.14-sources.jar",
+      "sha256": "47a383c35b7cd35a943e1293ec2cc6bf3059a80cb51b76aecf1833f033f63a44"
+    },
+    {
+      "name": "swt-gtk-linux-x86_64",
+      "kind": "file",
+      "version": "3.131.0",
+      "paths": [
+        "lib/swt/linux64/swt.jar"
+      ],
+      "license": "EPL-2.0",
+      "coordinates": "org.eclipse.platform:org.eclipse.swt.gtk.linux.x86_64:3.131.0",
+      "url": "https://repo1.maven.org/maven2/org/eclipse/platform/org.eclipse.swt.gtk.linux.x86_64/3.131.0/org.eclipse.swt.gtk.linux.x86_64-3.131.0-sources.jar",
+      "sha256": "61be8aa8ae5ac3e8587ebb494da8a7ba16e6f1e6f3c631cd77ad82d63dc65145"
+    },
+    {
+      "name": "eclipse-core-commands",
+      "kind": "file",
+      "version": "3.10.300",
+      "paths": [
+        "lib/swt/org.eclipse.core.commands-3.10.300.jar"
+      ],
+      "license": "EPL-2.0",
+      "coordinates": "org.eclipse.platform:org.eclipse.core.commands:3.10.300",
+      "url": "https://repo1.maven.org/maven2/org/eclipse/platform/org.eclipse.core.commands/3.10.300/org.eclipse.core.commands-3.10.300-sources.jar",
+      "sha256": "2640ef2933e7af391b3d88f58cbf3cccb7737db40269a2b95f2123d4321a1614"
+    },
+    {
+      "name": "eclipse-equinox-common",
+      "kind": "file",
+      "version": "3.17.0",
+      "paths": [
+        "lib/swt/org.eclipse.equinox.common-3.17.0.jar"
+      ],
+      "license": "EPL-2.0",
+      "coordinates": "org.eclipse.platform:org.eclipse.equinox.common:3.17.0",
+      "url": "https://repo1.maven.org/maven2/org/eclipse/platform/org.eclipse.equinox.common/3.17.0/org.eclipse.equinox.common-3.17.0-sources.jar",
+      "sha256": "b77f9b836d1a3b9dc3c34a93e86220f347ebe88199793967b918936528ccf9f9"
+    },
+    {
+      "name": "eclipse-jface",
+      "kind": "file",
+      "version": "3.28.0",
+      "paths": [
+        "lib/swt/org.eclipse.jface-3.28.0.jar"
+      ],
+      "license": "EPL-2.0",
+      "coordinates": "org.eclipse.platform:org.eclipse.jface:3.28.0",
+      "url": "https://repo1.maven.org/maven2/org/eclipse/platform/org.eclipse.jface/3.28.0/org.eclipse.jface-3.28.0-sources.jar",
+      "sha256": "36b444740565ba3e438e3d892b5e6028e2eb9a2a0105837867ebd65e6742a7af"
+    },
+    {
+      "name": "eclipse-osgi",
+      "kind": "file",
+      "version": "3.18.200",
+      "paths": [
+        "lib/swt/org.eclipse.osgi-3.18.200.jar"
+      ],
+      "license": "EPL-2.0",
+      "coordinates": "org.eclipse.platform:org.eclipse.osgi:3.18.200",
+      "url": "https://repo1.maven.org/maven2/org/eclipse/platform/org.eclipse.osgi/3.18.200/org.eclipse.osgi-3.18.200-sources.jar",
+      "sha256": "b29d50526616f15a0afd86cf7caaa756c2727980755c70d3c634623d997a3d93"
+    },
+    {
+      "name": "itextpdf",
+      "kind": "file",
+      "version": "5.5.13.4",
+      "paths": [
+        "plugins/hibiscus/lib/itextpdf-5.5.13.4.jar"
+      ],
+      "license": "AGPL-3.0-only",
+      "coordinates": "com.itextpdf:itextpdf:5.5.13.4",
+      "url": "https://repo1.maven.org/maven2/com/itextpdf/itextpdf/5.5.13.4/itextpdf-5.5.13.4-sources.jar",
+      "sha256": "2844df41d9b391af8e6fcaa380e77fa661abdbf1def7207955271315c2f4b933"
+    },
+    {
+      "name": "itext-pdfa",
+      "kind": "file",
+      "version": "5.5.13.4",
+      "paths": [
+        "plugins/hibiscus/lib/itext-pdfa-5.5.13.4.jar"
+      ],
+      "license": "AGPL-3.0-only",
+      "coordinates": "com.itextpdf:itext-pdfa:5.5.13.4",
+      "url": "https://repo1.maven.org/maven2/com/itextpdf/itext-pdfa/5.5.13.4/itext-pdfa-5.5.13.4-sources.jar",
+      "sha256": "76f63c106c7f109b1b2dc73ce488e1b481bcdee4120aa3f753af4a0e56fdb783"
+    },
+    {
+      "name": "hibernate-core",
+      "kind": "file",
+      "version": "5.6.15.Final",
+      "paths": [
+        "plugins/jameica.sensors/lib/hibernate-core-5.6.15.Final.jar"
+      ],
+      "license": "LGPL-2.1-or-later",
+      "coordinates": "org.hibernate:hibernate-core:5.6.15.Final",
+      "url": "https://repo1.maven.org/maven2/org/hibernate/hibernate-core/5.6.15.Final/hibernate-core-5.6.15.Final-sources.jar",
+      "sha256": "b5a573c2101095f5fee38c171d8886a97e31ea9aad12cb3059fe1da0ac2d4f08"
+    },
+    {
+      "name": "hibernate-commons-annotations",
+      "kind": "file",
+      "version": "5.1.2.Final",
+      "paths": [
+        "plugins/jameica.sensors/lib/hibernate-commons-annotations-5.1.2.Final.jar"
+      ],
+      "license": "LGPL-2.1-or-later",
+      "coordinates": "org.hibernate.common:hibernate-commons-annotations:5.1.2.Final",
+      "url": "https://repo1.maven.org/maven2/org/hibernate/common/hibernate-commons-annotations/5.1.2.Final/hibernate-commons-annotations-5.1.2.Final-sources.jar",
+      "sha256": "c468c39476241ed5853dfe4c95efaba22b159a85d98483638f25d7722f0d3bd2"
+    },
+    {
+      "name": "javax.mail",
+      "kind": "file",
+      "version": "1.6.2",
+      "paths": [
+        "plugins/jameica.sensors/lib/javax.mail-1.6.2.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "com.sun.mail:javax.mail:1.6.2",
+      "url": "https://repo1.maven.org/maven2/com/sun/mail/javax.mail/1.6.2/javax.mail-1.6.2-sources.jar",
+      "sha256": "91024fcbc346764ed923ab9cb00ae856b0ca8aa4ff152988d7a7a3349cf49995"
+    },
+    {
+      "name": "jboss-transaction-api_1.2_spec",
+      "kind": "file",
+      "version": "1.1.1.Final",
+      "paths": [
+        "plugins/jameica.sensors/lib/jboss-transaction-api_1.2_spec-1.1.1.Final.jar"
+      ],
+      "license": "CDDL-1.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "org.jboss.spec.javax.transaction:jboss-transaction-api_1.2_spec:1.1.1.Final",
+      "url": "https://repo1.maven.org/maven2/org/jboss/spec/javax/transaction/jboss-transaction-api_1.2_spec/1.1.1.Final/jboss-transaction-api_1.2_spec-1.1.1.Final-sources.jar",
+      "sha256": "da016f910a5f9ea507b0ad5701197d88b492c7c99c843c28ef6f3124b2bd0a0a"
+    },
+    {
+      "name": "stax-ex",
+      "kind": "file",
+      "version": "1.8",
+      "paths": [
+        "plugins/jameica.sensors/lib/stax-ex-1.8.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "org.jvnet.staxex:stax-ex:1.8",
+      "url": "https://repo1.maven.org/maven2/org/jvnet/staxex/stax-ex/1.8/stax-ex-1.8-sources.jar",
+      "sha256": "f9777956ab2be75a0dbe6f8510d8be71db3634beee2724207651876120d4d7e7"
+    },
+    {
+      "name": "activation",
+      "kind": "file",
+      "version": "1.1.1",
+      "paths": [
+        "lib/java_ee/activation-1.1.1.jar"
+      ],
+      "license": "CDDL-1.0",
+      "coordinates": "javax.activation:activation:1.1.1",
+      "url": "https://repo1.maven.org/maven2/javax/activation/activation/1.1.1/activation-1.1.1-sources.jar",
+      "sha256": "8f0625a411700ec64163f8d4bba860475519acb9799f47139c7f49740fd93703"
+    },
+    {
+      "name": "istack-commons-runtime",
+      "kind": "file",
+      "version": "3.0.5",
+      "paths": [
+        "lib/java_ee/istack-commons-runtime-3.0.5.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "com.sun.istack:istack-commons-runtime:3.0.5",
+      "url": "https://repo1.maven.org/maven2/com/sun/istack/istack-commons-runtime/3.0.5/istack-commons-runtime-3.0.5-sources.jar",
+      "sha256": "92235ba19d5776456a89b469100de2033e838aaeffc69ad98044603b8e8f0ea1"
+    },
+    {
+      "name": "javax.annotation-api",
+      "kind": "file",
+      "version": "1.3.2",
+      "paths": [
+        "lib/java_ee/javax.annotation-api-1.3.2.jar",
+        "plugins/jameica.webadmin/lib/javax.annotation-api-1.3.2.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.annotation:javax.annotation-api:1.3.2",
+      "url": "https://repo1.maven.org/maven2/javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2-sources.jar",
+      "sha256": "128971e52e0d84a66e3b6e049dab8ad7b2c58b7e1ad37fa2debd3d40c2947b95"
+    },
+    {
+      "name": "java-ee-jaxb-api",
+      "kind": "file",
+      "version": "2.4.0-b180725.0427",
+      "paths": [
+        "lib/java_ee/jaxb-api-2.4.0-b180725.0427.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.xml.bind:jaxb-api:2.4.0-b180725.0427",
+      "url": "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.4.0-b180725.0427/jaxb-api-2.4.0-b180725.0427-sources.jar",
+      "sha256": "5ef9084e29b6ff62fb3ebce884b0f847a98a10603a267edc70708aa88077d977"
+    },
+    {
+      "name": "java-ee-jaxb-runtime",
+      "kind": "file",
+      "version": "2.4.0-b180725.0644",
+      "paths": [
+        "lib/java_ee/jaxb-runtime-2.4.0-b180725.0644.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "org.glassfish.jaxb:jaxb-runtime:2.4.0-b180725.0644",
+      "url": "https://repo1.maven.org/maven2/org/glassfish/jaxb/jaxb-runtime/2.4.0-b180725.0644/jaxb-runtime-2.4.0-b180725.0644-sources.jar",
+      "sha256": "45b2cb97d722a15def4d5567154da83b868120a95f3acc84d40dffb3d514f5c9"
+    },
+    {
+      "name": "java-ee-txw2",
+      "kind": "file",
+      "version": "2.4.0-b180725.0644",
+      "paths": [
+        "lib/java_ee/txw2-2.4.0-b180725.0644.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "org.glassfish.jaxb:txw2:2.4.0-b180725.0644",
+      "url": "https://repo1.maven.org/maven2/org/glassfish/jaxb/txw2/2.4.0-b180725.0644/txw2-2.4.0-b180725.0644-sources.jar",
+      "sha256": "a7f668ccdf44a20cf6a324487df3ff3191f59b82c4bf982088dc0c185da3f11e"
+    },
+    {
+      "name": "javax.xml.soap-api",
+      "kind": "file",
+      "version": "1.4.0",
+      "paths": [
+        "plugins/jameica.soap/lib/javax.xml.soap-api-1.4.0.jar",
+        "plugins/jameica.webadmin/lib/javax.xml.soap-api-1.4.0.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.xml.soap:javax.xml.soap-api:1.4.0",
+      "url": "https://repo1.maven.org/maven2/javax/xml/soap/javax.xml.soap-api/1.4.0/javax.xml.soap-api-1.4.0-sources.jar",
+      "sha256": "9862aa28359feb4752abee282eb3d2866bea17c3f3f4d851d0028f850a53cf9d"
+    },
+    {
+      "name": "wsdl4j",
+      "kind": "file",
+      "version": "1.6.3",
+      "paths": [
+        "plugins/jameica.soap/lib/wsdl4j-1.6.3.jar"
+      ],
+      "license": "CPL-1.0",
+      "coordinates": "wsdl4j:wsdl4j:1.6.3",
+      "url": "https://repo1.maven.org/maven2/wsdl4j/wsdl4j/1.6.3/wsdl4j-1.6.3-sources.jar",
+      "sha256": "7a52906495578b482a489a76c4fa30af2840916b0b5bf633aa66892f180b53d6"
+    },
+    {
+      "name": "javax.jws-api",
+      "kind": "file",
+      "version": "1.1",
+      "paths": [
+        "plugins/jameica.webadmin/lib/javax.jws-api-1.1.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.jws:javax.jws-api:1.1",
+      "url": "https://repo1.maven.org/maven2/javax/jws/javax.jws-api/1.1/javax.jws-api-1.1-sources.jar",
+      "sha256": "b059db87e7c593d77b5abd9e2229ea4396e2084b35c485193867f39f9f926938"
+    },
+    {
+      "name": "javax.servlet-api",
+      "kind": "file",
+      "version": "3.1.0",
+      "paths": [
+        "plugins/jameica.webadmin/lib/javax.servlet-api-3.1.0.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.servlet:javax.servlet-api:3.1.0",
+      "url": "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/3.1.0/javax.servlet-api-3.1.0-sources.jar",
+      "sha256": "5c6d640f01e8e7ffdba21b2b75c0f64f0c30fd1fc3372123750c034cb363012a"
+    },
+    {
+      "name": "jaxb-api",
+      "kind": "file",
+      "version": "2.3.1",
+      "paths": [
+        "plugins/jameica.webadmin/lib/jaxb-api-2.3.1.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.xml.bind:jaxb-api:2.3.1",
+      "url": "https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1-sources.jar",
+      "sha256": "d69dc2c28833df5fb6e916efae01477ae936326b342d479a43539b0131c96b9d"
+    },
+    {
+      "name": "jaxws-api",
+      "kind": "file",
+      "version": "2.3.1",
+      "paths": [
+        "plugins/jameica.webadmin/lib/jaxws-api-2.3.1.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.xml.ws:jaxws-api:2.3.1",
+      "url": "https://repo1.maven.org/maven2/javax/xml/ws/jaxws-api/2.3.1/jaxws-api-2.3.1-sources.jar",
+      "sha256": "d15a0ad941f0105130c82f88aa4fcc2616d15e230c8b57ce99f99ae543e53c20"
+    },
+    {
+      "name": "javax.activation-api",
+      "kind": "file",
+      "version": "1.2.0",
+      "paths": [
+        "plugins/jameica.webadmin/lib/javax.activation-api-1.2.0.jar"
+      ],
+      "license": "CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "coordinates": "javax.activation:javax.activation-api:1.2.0",
+      "url": "https://repo1.maven.org/maven2/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0-sources.jar",
+      "sha256": "d7411fb29089cafa4b77493f10bfb52832cd1976948903d0b039e12b0bd70334"
+    },
+    {
+      "name": "ecj",
+      "kind": "file",
+      "version": "3.19.0",
+      "paths": [
+        "plugins/jameica.webadmin/lib/ecj-3.19.0.jar"
+      ],
+      "license": "EPL-2.0",
+      "coordinates": "org.eclipse.jdt:ecj:3.19.0",
+      "url": "https://repo1.maven.org/maven2/org/eclipse/jdt/ecj/3.19.0/ecj-3.19.0-sources.jar",
+      "sha256": "444d51531d035055bc4da8c5a5b138366d716bae88ae05f8e1d99de1b40e6f67"
+    },
+    {
+      "name": "eclipse-ui-forms",
+      "kind": "file",
+      "version": "3.6.100.v20140422-1825",
+      "paths": [
+        "lib/swt/org.eclipse.ui.forms_3.6.100.v20140422-1825.jar"
+      ],
+      "license": "EPL-1.0",
+      "url": "https://archive.eclipse.org/eclipse/updates/4.4/R-4.4-201406061215/plugins/org.eclipse.ui.forms.source_3.6.100.v20140422-1825.jar",
+      "sha256": "b324318a64e082aa4e48bb55f7ada119b0a5e6b5834224b7d7e1e5d75827ee3e"
+    },
+    {
+      "name": "swtchart",
+      "kind": "file",
+      "version": "0.14.0.202301260747",
+      "paths": [
+        "plugins/hibiscus/lib/swtchart/org.eclipse.swtchart_0.14.0.202301260747.jar"
+      ],
+      "license": "EPL-2.0",
+      "url": "https://download.eclipse.org/swtchart/releases/0.14.0/repository/plugins/org.eclipse.swtchart.source_0.14.0.202301260747.jar",
+      "sha256": "5846b8f48a3d0b2c7892ac1876500f02e8460afeb939ddc8f8c2cc60a1f8cce5"
+    },
+    {
+      "name": "swtchart-extensions",
+      "kind": "file",
+      "version": "0.14.0.202301260747",
+      "paths": [
+        "plugins/hibiscus/lib/swtchart/org.eclipse.swtchart.extensions_0.14.0.202301260747.jar"
+      ],
+      "license": "EPL-2.0",
+      "url": "https://download.eclipse.org/swtchart/releases/0.14.0/repository/plugins/org.eclipse.swtchart.extensions.source_0.14.0.202301260747.jar",
+      "sha256": "c2e5f9dac6552df6ed8e9442ec72b5b72eaa6ad59f041e2432f0adad86b54ef3"
+    }
+  ],
+  "missing": [
+    {
+      "name": "h2-migration-changes",
+      "paths": [
+        "lib/h2/migration-h2/disabled/h2-1.4.199.jar",
+        "lib/h2/migration-h2/enabled/h2-1.4.199-fork.jar"
+      ],
+      "license": "MPL-2.0 OR EPL-1.0",
+      "reason": "both jars differ from H2 1.4.199 on Maven Central (org/h2/mvstore/StreamStore.class, data.zip, the manifest; the fork also moves org.h2 to org.h14199); the archive holds the upstream 1.4.199 sources, the changes are published nowhere"
+    },
+    {
+      "name": "paperclips-ui",
+      "paths": [
+        "lib/paperclips/net.sf.paperclips.ui_1.0.4.jar"
+      ],
+      "license": "EPL-1.0",
+      "reason": "lib.src/ of Jameica holds the sources of PaperClips 1.0.4 without the package net.sf.paperclips.ui, and no other origin of this version is known"
+    },
+    {
+      "name": "libtowitoko",
+      "paths": [
+        "plugins/hibiscus/lib/libtowitoko-2.0.7.so",
+        "plugins/hibiscus/lib/libtowitoko-2.0.7-amd64.so"
+      ],
+      "license": "GPL (towitoko_info.xml)",
+      "reason": "native driver for Towitoko card readers; the project page that the package names is gone and no origin with this exact build is known"
+    },
+    {
+      "name": "libhbci4java-card-freebsd",
+      "paths": [
+        "plugins/hibiscus/lib/libhbci4java-card-freebsd-64.so"
+      ],
+      "license": "LGPL-2.1 (HBCI4Java)",
+      "reason": "not under chipcard/lib/ of the HBCI4Java repository at the pinned tag; it is probably built from chipcard/src/, which the archive holds, but that is not checked"
+    },
+    {
+      "name": "libhbci4java-sizrdh",
+      "paths": [
+        "plugins/hibiscus/lib/libhbci4java-sizrdh-linux-gcc2.so",
+        "plugins/hibiscus/lib/libhbci4java-sizrdh-linux-gcc3.so",
+        "plugins/hibiscus/lib/hbci4java-sizrdh-win32.dll"
+      ],
+      "license": "unknown",
+      "reason": "native library for SIZ RDH key files; the HBCI4Java repository at the pinned tag holds no source of it"
+    },
+    {
+      "name": "libct",
+      "paths": [
+        "plugins/hibiscus/lib/libct.so"
+      ],
+      "license": "proprietary (kaan_info.xml)",
+      "reason": "proprietary card reader driver of its manufacturer; no source is published"
+    }
+  ]
+}
