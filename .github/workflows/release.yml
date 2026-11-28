@@ -49,6 +49,8 @@ jobs:
   sources:
     name: Sources
     needs: check
+    permissions:
+      contents: read
     uses: $/.github/workflows/sources.yml
     with:
       label: ${{ github.ref_name }}
