@@ -45,9 +45,14 @@ def parse_release(tag: str) -> Release:
 	return Release(match["hibiscus"], int(match["revision"]))
 
 
+def is_release(tag: str) -> bool:
+	"""Whether a tag has the form of a release tag such as v2.12.4-1."""
+	return _RELEASE.fullmatch(tag) is not None
+
+
 def releases(tags: Iterable[str]) -> tuple[Release, ...]:
 	"""The releases among git tags, in their order; tags of another form are no releases."""
-	return tuple(parse_release(tag) for tag in tags if _RELEASE.fullmatch(tag))
+	return tuple(parse_release(tag) for tag in tags if is_release(tag))
 
 
 def image_tags(ref: str, sha: str, existing: Iterable[str] = (), image: str = IMAGE) -> tuple[str, ...]:

@@ -7,7 +7,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from hibiscus_image import dockerfile, tags, vendor
+from hibiscus_image import dockerfile, sources, tags, vendor
 from hibiscus_image.summary import summary
 
 
@@ -48,6 +48,22 @@ def _parser() -> argparse.ArgumentParser:
 	bump.add_argument("--version", required=True)
 	bump.add_argument("--sha256", required=True)
 
+	archive = commands.add_parser(
+		"sources-archive", help="fetch, check and pack the pinned sources into the archive of a release"
+	)
+	archive.add_argument(
+		"--label", required=True, help="the release tag, such as v2.12.4-1, or another label"
+	)
+	archive.add_argument("--output", type=Path, required=True, help="the directory to write the archive to")
+	archive.add_argument("--list", type=Path, default=sources.SOURCES, help="the source list to read")
+	archive.add_argument("--notes", type=Path, help="a file to put next to the manifest, such as SOURCES.md")
+	archive.add_argument("--cache", type=Path, help="a directory that keeps checked files between runs")
+
+	same = commands.add_parser(
+		"same-package", help="check that another Dockerfile pins the same vendor package as this one"
+	)
+	same.add_argument("other", type=Path)
+
 	summarize = commands.add_parser("summary", help="print the summary of a build as Markdown")
 	summarize.add_argument("--tags", default="", help="the image tags, separated by commas")
 	return parser
@@ -84,9 +100,28 @@ def main(argv: Sequence[str] | None = None) -> int:
 				print(vendor.checksum(args.file.read_text(encoding="ascii"), args.version))
 			case "bump":
 				args.dockerfile.write_text(dockerfile.bump(text, args.version, args.sha256), encoding="utf-8")
+			case "sources-archive":
+				source_list = sources.parse(args.list.read_text(encoding="utf-8"))
+				sources.check_package(source_list, dockerfile.hibiscus_version(text))
+				if tags.is_release(args.label):
+					problems = tags.release_check(args.label, source_list.package_version)
+					if problems:
+						raise ValueError(problems[0])
+				print(sources.build(source_list, args.label, args.output, notes=args.notes, cache=args.cache))
+			case "same-package":
+				other = args.other.read_text(encoding="utf-8")
+				pinned = (dockerfile.hibiscus_version(text), dockerfile.hibiscus_sha256(text))
+				theirs = (dockerfile.hibiscus_version(other), dockerfile.hibiscus_sha256(other))
+				if pinned != theirs:
+					print(
+						f"{args.other} pins the package {theirs[0]} with SHA-256 {theirs[1]}, "
+						f"but {args.dockerfile} pins {pinned[0]} with SHA-256 {pinned[1]}",
+						file=sys.stderr,
+					)
+					return 1
 			case _:
 				print(summary(text, [tag for tag in args.tags.split(",") if tag]), end="")
-	except (OSError, ValueError) as error:
+	except (OSError, ValueError, sources.SourceError) as error:
 		print(error, file=sys.stderr)
 		return 1
 	return 0
