@@ -99,7 +99,7 @@ jobs:
             cat <<BODY
           Der Hersteller hat Hibiscus Server $VERSION veröffentlicht. Dieser Pull Request setzt \`HIBISCUS_VERSION\` und \`HIBISCUS_SHA256\` im \`Dockerfile\` auf das neue Paket. Die PGP-Signatur des Pakets ist mit dem Schlüssel des Herstellers geprüft, die SHA-256-Summe stammt aus seiner Datei \`.SHA-256\`.
 
-          Vor dem Merge: den [Changelog des Herstellers](https://www.willuhn.de/products/hibiscus-server/changelog.php) lesen, die Versionen der Bestandteile in \`SOURCES.md\`, im README und in \`docs/architektur.md\` nachziehen (die Tests schlagen fehl, bis sie stimmen), den Changelog ergänzen und den Image-Test abwarten. Die Checks dieses Pull Requests starten erst, wenn ein Maintainer sie mit „Approve workflows to run“ freigibt.
+          Vor dem Merge: den [Changelog des Herstellers](https://www.willuhn.de/products/hibiscus-server/changelog.php) lesen, die Quelltext-Liste \`sources.json\` auf das neue Paket setzen (\`package.version\`, Versionen, Refs und Commits jedes Bestandteils; die Plugins mit Nightly-Version und die Bibliotheken brauchen einen Blick in das Paket, siehe \`docs/versionierung.md\`), die Versionen der Bestandteile in \`SOURCES.md\`, im README und in \`docs/architektur.md\` nachziehen (die Tests schlagen fehl, bis Liste, \`SOURCES.md\` und \`Dockerfile\` zusammenpassen), den Changelog ergänzen und den Image-Test abwarten. Die Checks dieses Pull Requests starten erst, wenn ein Maintainer sie mit „Approve workflows to run“ freigibt.
 
           BODY
             echo '```text'

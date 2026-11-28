@@ -1,0 +1,156 @@
+# Builds the archive with the source code of the software in the image from sources.json, see SOURCES.md.
+#
+# - Called by the workflow Release: builds the archive of the tag for the release job to attach.
+# - Pull requests and pushes to main that touch the list, the tool or this workflow, and every Monday: builds
+#   the archive and keeps it for seven days, so that a commit or file that vanished upstream shows before a
+#   release needs it. Other pull requests skip it, because every run fetches some thirty files from Maven
+#   Central, which throttles runners that fetch often.
+# - By hand from main with a release tag: attaches the archive to that existing release, but only when the
+#   Dockerfile of the tag pins the same vendor package as main, whose source list it uses.
+name: Sources
+
+on:
+  pull_request:
+    paths:
+      - sources.json
+      - SOURCES.md
+      - Dockerfile
+      - hibiscus_image/sources.py
+      - hibiscus_image/__main__.py
+      - .github/workflows/sources.yml
+  push:
+    branches: [main]
+    paths:
+      - sources.json
+      - SOURCES.md
+      - Dockerfile
+      - hibiscus_image/sources.py
+      - hibiscus_image/__main__.py
+      - .github/workflows/sources.yml
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_call:
+    inputs:
+      label:
+        description: The release tag the archive is named after
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The existing release that gets the archive, such as v2.12.4-1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sources-${{ github.event_name }}-${{ github.ref }}-${{ inputs.tag }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  archive:
+    name: Build the source archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Check the release tag and its package
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [[ $GITHUB_REF != refs/heads/main ]]; then
+            echo "::error::Run this workflow from main: it uses the source list of main."
+            exit 1
+          fi
+          # The scheme of the tag and the version of the package on main.
+          python -m hibiscus_image release-check --ref "refs/tags/$TAG"
+          if ! git fetch --quiet --depth 1 --no-tags origin "refs/tags/$TAG:refs/tags/$TAG"; then
+            echo "::error::The tag $TAG does not exist."
+            exit 1
+          fi
+          # The same vendor package, by version and SHA-256, has the same sources.
+          git show "refs/tags/$TAG:Dockerfile" > "$RUNNER_TEMP/tag.Dockerfile"
+          if ! python -m hibiscus_image same-package "$RUNNER_TEMP/tag.Dockerfile"; then
+            echo "::error::The tag $TAG pins another vendor package than main; its sources are not the ones of main."
+            exit 1
+          fi
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' > "$RUNNER_TEMP/assets.txt"; then
+            echo "::error::The tag $TAG has no release."
+            exit 1
+          fi
+          if grep -Fxq "hibiscus-server-$TAG-sources.tar.gz" "$RUNNER_TEMP/assets.txt"; then
+            echo "::error::The release $TAG has its source archive already; an asset is never replaced."
+            exit 1
+          fi
+
+      # Files are checked against their pinned SHA-256 whether they come from the cache or the network. A
+      # release builds without the cache, so that it fetches everything from its origin.
+      - name: Restore the checked downloads
+        if: inputs.label == '' && inputs.tag == ''
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/sources
+          key: sources-${{ hashFiles('sources.json') }}
+
+      - name: Build the source archive
+        env:
+          LABEL: ${{ inputs.label || inputs.tag }}
+          CACHE: ${{ (inputs.label == '' && inputs.tag == '') && '.cache/sources' || '' }}
+        run: |
+          label=${LABEL:-${GITHUB_SHA:0:12}}
+          options=()
+          if [[ -n $CACHE ]]; then
+            options+=(--cache "$CACHE")
+          fi
+          start=$SECONDS
+          archive=$(python -m hibiscus_image sources-archive --label "$label" --output "$RUNNER_TEMP/sources" \
+            --notes SOURCES.md "${options[@]}")
+          {
+            echo "## Source archive"
+            echo
+            echo "\`$(basename "$archive")\`, $(du -h "$archive" | cut -f1), built in $((SECONDS - start)) s"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the source archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: source-archive
+          path: ${{ runner.temp }}/sources/hibiscus-server-*-sources.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+          # The archive is compressed already.
+          compression-level: 0
+
+  attach:
+    name: Attach the source archive to the release
+    needs: archive
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # upload the release asset
+    steps:
+      - name: Download the source archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: source-archive
+          path: ${{ runner.temp }}/sources
+
+      - name: Attach the source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          # Without --clobber, gh refuses to replace an asset of the same name.
+          gh release upload "$TAG" "$RUNNER_TEMP/sources/hibiscus-server-$TAG-sources.tar.gz" --repo "$GITHUB_REPOSITORY"
