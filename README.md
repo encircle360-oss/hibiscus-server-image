@@ -163,7 +163,7 @@ Der Build lädt `hibiscus-server-2.12.4.zip` von willuhn.de und bricht ab, wenn 
 - [Sicherheit](docs/sicherheit.md): das Modell mit einem Passwort, Netzwerk-Isolation, Signatur, Vorgaben und ihre Gründe
 - [Versionierung](docs/versionierung.md): Tags, Revisionen, Release-Prozess, neue Pakete des Herstellers
 - [Entwicklung](docs/entwicklung.md): Aufbau, Tests, CI, Pins
-- [Quelltext](SOURCES.md): wo der Quelltext der Software im Image liegt
+- [Quelltext](SOURCES.md): wo der Quelltext der Software im Image liegt und was das Quelltext-Archiv jedes Releases enthält
 - [Changelog](CHANGELOG.md), [Mitwirken](CONTRIBUTING.md), [Hinweise für Coding-Agenten](AGENTS.md), [Sicherheitslücken melden](SECURITY.md)
 
 ## Mitwirken und Support
@@ -196,7 +196,7 @@ Wie Hibiscus Server steht dieses Repository unter der **GNU General Public Licen
 >
 > As a special exception, the copyright holders of this program give you permission to link this program with independent modules to produce an executable, regardless of the license terms of these independent modules, and to copy and distribute the resulting executable under terms of your choice, provided that you also meet, for each linked independent module, the terms and conditions of the license of that module. An independent module is a module which is not derived from or based on this program. If you modify this program, you may extend this exception to your version of the program, but you are not obligated to do so. If you do not wish to do so, delete this exception statement from your version.
 
-Das Image enthält außerdem die Bibliotheken des Pakets und des Basis-Images unter ihren eigenen Lizenzen. Wo der Quelltext von allem liegt, steht in [SOURCES.md](SOURCES.md), die auch im Image unter `/usr/share/doc/hibiscus-server-image/` liegt.
+Das Image enthält außerdem die Bibliotheken des Pakets und des Basis-Images unter ihren eigenen Lizenzen. Jedes Release hängt ein Archiv `hibiscus-server-<Tag>-sources.tar.gz` mit dem Quelltext von Hibiscus Server, Jameica, den Plugins und den Bibliotheken unter Copyleft-Lizenzen an, jeweils zu dem Commit oder der Datei, die [`sources.json`](sources.json) pinnt. Was darin liegt, was fehlt und wo der Quelltext des Basis-Images liegt, steht in [SOURCES.md](SOURCES.md), die auch im Image unter `/usr/share/doc/hibiscus-server-image/` liegt.
 
 ## Maintainer
 

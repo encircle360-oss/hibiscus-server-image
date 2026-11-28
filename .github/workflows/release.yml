@@ -36,7 +36,8 @@ jobs:
 
   image:
     name: Image
-    needs: signature
+    # The image is pushed only when the release can carry the source archive.
+    needs: [signature, sources]
     permissions:
       contents: read
       packages: write # push the image
@@ -45,9 +46,18 @@ jobs:
       security-events: write # upload the vulnerability scan
     uses: $/.github/workflows/build.yml
 
+  sources:
+    name: Sources
+    needs: check
+    permissions:
+      contents: read
+    uses: $/.github/workflows/sources.yml
+    with:
+      label: ${{ github.ref_name }}
+
   release:
     name: GitHub release
-    needs: image
+    needs: [image, sources]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -67,6 +77,12 @@ jobs:
           pattern: hibiscus-server-*.spdx.json
           path: ${{ runner.temp }}/sbom
           merge-multiple: true
+
+      - name: Download the source archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: source-archive
+          path: ${{ runner.temp }}/sources
 
       - name: Write the release notes
         env:
@@ -96,11 +112,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # One SBOM per platform, such as hibiscus-server-v2.12.4-1-arm64.spdx.json.
+          # One SBOM per platform, such as hibiscus-server-v2.12.4-1-arm64.spdx.json, and the source archive.
           sboms=()
           for arch in amd64 arm64; do
             sboms+=("$RUNNER_TEMP/hibiscus-server-$GITHUB_REF_NAME-$arch.spdx.json")
             mv "$RUNNER_TEMP/sbom/hibiscus-server-$arch.spdx.json" "${sboms[-1]}"
           done
-          gh release create "$GITHUB_REF_NAME" "${sboms[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag \
+          sources="$RUNNER_TEMP/sources/hibiscus-server-$GITHUB_REF_NAME-sources.tar.gz"
+          if [[ ! -s $sources ]]; then
+            echo "::error::The source archive $(basename "$sources") is missing."
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" "${sboms[@]}" "$sources" --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"

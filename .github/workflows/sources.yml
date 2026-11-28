@@ -1,0 +1,99 @@
+# Builds the archive with the source code of the software in the image from sources.json, see SOURCES.md.
+#
+# - Called by the workflow Release: builds the archive of the tag for the release job to attach.
+# - Pull requests and pushes to main that touch the list, the tool or this workflow, and every Monday: builds
+#   the archive and keeps it for seven days, so that a commit or file that vanished upstream shows before a
+#   release needs it. Other pull requests skip it, because every run fetches some thirty files from Maven
+#   Central, which throttles runners that fetch often.
+# - Called by the workflow Attach sources: builds the archive of an existing release from the list of main.
+#
+# No job here needs more than reading the repository; the callers upload the archive.
+name: Sources
+
+on:
+  pull_request:
+    paths:
+      - sources.json
+      - SOURCES.md
+      - Dockerfile
+      - hibiscus_image/sources.py
+      - hibiscus_image/__main__.py
+      - .github/workflows/sources.yml
+  push:
+    branches: [main]
+    paths:
+      - sources.json
+      - SOURCES.md
+      - Dockerfile
+      - hibiscus_image/sources.py
+      - hibiscus_image/__main__.py
+      - .github/workflows/sources.yml
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_call:
+    inputs:
+      label:
+        description: The release tag the archive is named after
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Called by Release this is the tag push, called by Attach sources the run on main with the tag as label:
+  # each release and each attach run has a group of its own.
+  group: sources-${{ github.event_name }}-${{ github.ref }}-${{ inputs.label }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  archive:
+    name: Build the source archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      # Files are checked against their pinned SHA-256 whether they come from the cache or the network. A
+      # release and an attach run build without the cache, so that they fetch everything from where it is pinned.
+      - name: Restore the checked downloads
+        if: inputs.label == ''
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/sources
+          key: sources-${{ hashFiles('sources.json') }}
+
+      - name: Build the source archive
+        env:
+          LABEL: ${{ inputs.label }}
+          CACHE: ${{ inputs.label == '' && '.cache/sources' || '' }}
+        run: |
+          label=${LABEL:-${GITHUB_SHA:0:12}}
+          options=()
+          if [[ -n $CACHE ]]; then
+            options+=(--cache "$CACHE")
+          fi
+          start=$SECONDS
+          archive=$(python -m hibiscus_image sources-archive --label "$label" --output "$RUNNER_TEMP/sources" \
+            --notes SOURCES.md "${options[@]}")
+          {
+            echo "## Source archive"
+            echo
+            echo "\`$(basename "$archive")\`, $(du -h "$archive" | cut -f1), built in $((SECONDS - start)) s"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the source archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: source-archive
+          path: ${{ runner.temp }}/sources/hibiscus-server-*-sources.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+          # The archive is compressed already.
+          compression-level: 0

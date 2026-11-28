@@ -2,7 +2,15 @@
 
 import pytest
 
-from hibiscus_image.tags import IMAGE, Release, image_tags, parse_release, release_check, releases
+from hibiscus_image.tags import (
+	IMAGE,
+	Release,
+	image_tags,
+	is_release,
+	parse_release,
+	release_check,
+	releases,
+)
 
 
 def names(tags):
@@ -41,6 +49,12 @@ def test_versions_compare_by_number():
 	assert Release("2.12.10", 1).is_newer_than(Release("2.12.9", 5))
 	assert not Release("2.12.4", 1).is_newer_than(Release("2.12.4", 1))
 	assert releases(["v2.12.4-1", "x"]) == (Release("2.12.4", 1),)
+
+
+def test_is_release_knows_the_scheme():
+	assert is_release("v2.12.4-1")
+	assert not is_release("v2.12.4-0")
+	assert not is_release("main")
 
 
 def test_parse_release_explains_the_scheme():
