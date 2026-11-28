@@ -67,7 +67,14 @@ python -m hibiscus_image checksum hibiscus-server-X.Y.Z.zip.SHA-256 --version X.
 python -m hibiscus_image bump --version X.Y.Z --sha256 <sha256>
 ```
 
-Der Pull Request ist nicht fertig, wenn er sich öffnet: Die Versionen der Bestandteile in [SOURCES.md](../SOURCES.md), im README und in [Architektur](architektur.md) zieht ein Maintainer von Hand nach, nachdem er das neue Paket angesehen hat; bis dahin schlagen die Tests fehl. Dazu gehören der Changelog und das Lesen des [Changelogs des Herstellers](https://www.willuhn.de/products/hibiscus-server/changelog.php). Die Checks eines Pull Requests, den der Workflow geöffnet hat, starten erst, wenn ein Maintainer sie mit „Approve workflows to run“ freigibt. Damit der Workflow Pull Requests öffnen darf, muss in den Einstellungen des Repositories unter *Actions > General > Workflow permissions* „Allow GitHub Actions to create and approve pull requests“ an sein.
+Der Pull Request ist nicht fertig, wenn er sich öffnet: Die Quelltext-Liste [`sources.json`](../sources.json) und die Versionen der Bestandteile in [SOURCES.md](../SOURCES.md), im README und in [Architektur](architektur.md) zieht ein Maintainer von Hand nach, nachdem er das neue Paket angesehen hat; bis dahin schlagen die Tests fehl. Für `sources.json`:
+
+- `package.version` auf die neue Version setzen.
+- **Jameica, Hibiscus, Hibiscus Server:** Version aus `plugin.xml` und Manifest des Pakets, Ref ist der Branch mit dieser Versionsnummer, Commit der, auf den er zeigt: `git ls-remote https://github.com/willuhn/hibiscus refs/heads/<Version>`.
+- **Plugins mit Nightly-Version und Bibliotheken des Herstellers ohne Tag:** Build-Datum aus `Built-Date` im Manifest und den Zeitstempeln der jar-Datei, dann der letzte Commit des Standard-Branches bis dahin, geprüft gegen `plugin.xml` und die Klassen der jar-Datei wie in [SOURCES.md](../SOURCES.md#hibiscus-server-jameica-und-die-bibliotheken-des-herstellers) beschrieben. Das lässt sich nicht mechanisch erledigen; der Befehl `bump` ändert `sources.json` deshalb nicht.
+- **HBCI4Java:** der Tag `hbci4j-core-<Version>`.
+- **Bibliotheken:** für jede neue oder geänderte jar-Datei die Lizenz prüfen; bei einer Copyleft-Lizenz Adresse und SHA-256 der Quelltext-Datei derselben Version eintragen, etwa `sha256sum` der `-sources.jar` von Maven Central, nachdem die jar-Datei des Pakets mit der auf Maven Central verglichen ist. Was sich nicht pinnen lässt, kommt unter `missing` und in [SOURCES.md](../SOURCES.md#was-das-archiv-nicht-enthält).
+- `python -m hibiscus_image sources-archive --label test --output /tmp/sources` baut das Archiv lokal; der Workflow Sources baut es im Pull Request. Dazu gehören der Changelog und das Lesen des [Changelogs des Herstellers](https://www.willuhn.de/products/hibiscus-server/changelog.php). Die Checks eines Pull Requests, den der Workflow geöffnet hat, starten erst, wenn ein Maintainer sie mit „Approve workflows to run“ freigibt. Damit der Workflow Pull Requests öffnen darf, muss in den Einstellungen des Repositories unter *Actions > General > Workflow permissions* „Allow GitHub Actions to create and approve pull requests“ an sein.
 
 ## Release-Prozess für Maintainer
 
@@ -81,6 +88,14 @@ Der Pull Request ist nicht fertig, wenn er sich öffnet: Die Versionen der Besta
    git push origin v2.12.4-1
    ```
 
-3. **Veröffentlichen.** Der Push des Tags startet den Workflow Release (`release.yml`): `release-check`, dann der Workflow Signature, dann der Workflow Image mit Build, Image-Test und Scan je Plattform, dem Index unter den Tags, die dem Release zustehen, Herkunftsangabe und SBOM, zuletzt das GitHub-Release mit der Zusammenfassung von `python -m hibiscus_image summary`, dem Abschnitt aus dem Changelog und je einer SBOM für `linux/amd64` und `linux/arm64`. Schlägt ein Schritt fehl, wird nichts veröffentlicht.
+3. **Veröffentlichen.** Der Push des Tags startet den Workflow Release (`release.yml`): `release-check`, dann der Workflow Signature und der Workflow Sources, der das Quelltext-Archiv `hibiscus-server-<Tag>-sources.tar.gz` aus `sources.json` baut, dann der Workflow Image mit Build, Image-Test und Scan je Plattform, dem Index unter den Tags, die dem Release zustehen, Herkunftsangabe und SBOM, zuletzt das GitHub-Release mit der Zusammenfassung von `python -m hibiscus_image summary`, dem Abschnitt aus dem Changelog, je einer SBOM für `linux/amd64` und `linux/arm64` und dem Quelltext-Archiv. Schlägt ein Schritt fehl, auch das Laden oder Prüfen eines einzigen Quelltexts, wird nichts veröffentlicht.
 
 Ein veröffentlichtes Release wird nicht neu getaggt; eine Korrektur ist eine neue Revision.
+
+## Quelltext-Archiv nachträglich anhängen
+
+Ein Release ohne Quelltext-Archiv, etwa `v2.12.4-1`, das vor dem Archiv erschienen ist, bekommt es über den Workflow Sources (`sources.yml`): unter *Actions > Sources > Run workflow* den Branch `main` wählen und den Tag eintragen. Am Tag selbst gibt es keine `sources.json`; der Lauf nimmt deshalb die Liste von `main`. Er gilt nur unter dieser Regel:
+
+**Die Liste von `main` passt zu einem Tag, wenn das `Dockerfile` des Tags dasselbe Paket des Herstellers pinnt wie `main`, also dieselbe `HIBISCUS_VERSION` und dieselbe `HIBISCUS_SHA256`.** Dasselbe Paket enthält dieselben Bestandteile und hat damit dieselben Quelltexte.
+
+Der Lauf bricht ab, wenn er nicht von `main` startet, der Tag nicht dem Schema entspricht oder eine andere Version nennt als `main` (`release-check`), der Tag oder sein Release fehlt, das Paket des Tags ein anderes ist (`same-package`) oder das Release das Archiv schon hat. Er hängt nur die eine Datei an und ersetzt keine andere. Erst der Job, der hochlädt, darf in das Repository schreiben. Für ein Release eines älteren Pakets passt die Liste von `main` nicht; ihm lässt sich das Archiv so nicht anhängen.

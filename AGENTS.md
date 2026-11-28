@@ -23,6 +23,6 @@ Der Einsatz von Coding-Agenten ist in diesem Projekt ausdrücklich erlaubt, für
 
 ## Wiederkehrende Aufgaben
 
-- **Neues Paket des Herstellers:** den Pull Request des Workflows Vendor release prüfen oder die Schritte in [Versionierung](docs/versionierung.md#ein-neues-paket-des-herstellers) von Hand gehen, die Versionen der Bestandteile in `SOURCES.md`, README und `docs/architektur.md` aus dem neuen Paket nachziehen, den Changelog ergänzen.
+- **Neues Paket des Herstellers:** den Pull Request des Workflows Vendor release prüfen oder die Schritte in [Versionierung](docs/versionierung.md#ein-neues-paket-des-herstellers) von Hand gehen, `sources.json` und die Versionen der Bestandteile in `SOURCES.md`, README und `docs/architektur.md` aus dem neuen Paket nachziehen, den Changelog ergänzen.
 - **Neues Basis-Image:** den Pull Request von Dependabot prüfen; der Image-Test zeigt, ob alles läuft.
 - **Release:** die Schritte in [Versionierung](docs/versionierung.md#release-prozess-für-maintainer).

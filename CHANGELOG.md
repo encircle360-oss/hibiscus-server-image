@@ -4,6 +4,12 @@ Alle nennenswerten Änderungen an hibiscus-server-image stehen in dieser Datei. 
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Jedes Release hängt das Quelltext-Archiv `hibiscus-server-<Tag>-sources.tar.gz` an: Jameica, Hibiscus, Hibiscus Server, die sechs Plugins mit 2.11.0-nightly, HBCI4Java, de.willuhn.util, de.willuhn.datasource und OBanToo zum gepinnten Commit sowie 35 Bibliotheken unter Copyleft-Lizenzen als Quelltext-Datei ihres Projekts, dazu ein Manifest mit Herkunft und Pin jedes Bestandteils. Die Quelltexte pinnt `sources.json` per Commit oder SHA-256; ohne vollständiges Archiv entsteht kein Release. `SOURCES.md` nennt, was fehlt: die Änderungen des Herstellers an H2 1.4.199, den UI-Teil von PaperClips und vier native Bibliotheken, darunter ein proprietärer Treiber.
+- Workflow Sources: baut das Archiv bei Änderungen an der Liste und montags, als Teil von Release, und hängt es von Hand an ein bestehendes Release mit demselben Paket wie `main`, etwa `v2.12.4-1`.
+- Befehle `python -m hibiscus_image sources-archive` und `same-package`.
+
 ### Behoben
 
 - Die Tests des Einstiegspunkts scheitern nicht mehr, wenn Maven Central den Runner drosselt (HTTP 429): Die CI hält die drei Test-Werkzeuge im Cache, und der Abruf versucht es länger. Geprüft wird jede Datei weiter bei jedem Lauf gegen ihre gepinnte SHA-256-Summe.
