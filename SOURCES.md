@@ -14,7 +14,7 @@ Das Archiv enthält:
 
 Welche Quelltexte hineingehören, steht in [`sources.json`](sources.json): je Bestandteil der Commit seines Repositories oder die Adresse und SHA-256 seiner Quelltext-Datei. Ein Commit wird mit `git fetch --depth 1 <Repository> <Commit>` geladen, und das Werkzeug bricht ab, wenn `FETCH_HEAD` nicht genau dieser Commit ist; über den Inhalt wacht damit die Adressierung von Git. Eine Datei bricht ab, wenn ihre SHA-256 nicht die gepinnte ist. Schlägt ein Bestandteil fehl, entsteht kein Archiv und kein Release. `python -m hibiscus_image sources-archive --label <Tag> --output <Verzeichnis>` baut das Archiv auch lokal.
 
-Ein Release, das vor diesem Archiv erschienen ist, wie `v2.12.4-1`, bekommt es über den Workflow Sources nachträglich, wenn das Paket auf `main` dasselbe ist wie das des Tags, siehe [Versionierung](docs/versionierung.md#quelltext-archiv-nachträglich-anhängen).
+Ein Release, das vor diesem Archiv erschienen ist, wie `v2.12.4-1`, bekommt es über den Workflow Attach sources nachträglich, wenn das Paket auf `main` dasselbe ist wie das des Tags, siehe [Versionierung](docs/versionierung.md#quelltext-archiv-nachträglich-anhängen).
 
 ## Einstiegspunkt und Rezept
 

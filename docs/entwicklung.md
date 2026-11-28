@@ -41,13 +41,13 @@ pip install -r requirements-dev.txt
 pre-commit install
 ```
 
-`requirements-dev.txt` bringt coverage, pre-commit, pytest, pytest-cov, ruff und zizmor in festen Versionen. Java brauchst du lokal nicht: Die Tests des Einstiegspunkts laufen im JDK-Image der Stufe `build`.
+`requirements-dev.txt` bringt coverage, pre-commit, pytest, pytest-cov, PyYAML (für die Prüfung der Workflows), ruff und zizmor in festen Versionen. Java brauchst du lokal nicht: Die Tests des Einstiegspunkts laufen im JDK-Image der Stufe `build`.
 
 ## Tests
 
 | Befehl | Was er prüft |
 |---|---|
-| `pytest` | die Werkzeuge mit 100 % Zeilen- und Zweigabdeckung (`--cov-fail-under=100`) und das Repository selbst: beide `FROM` per Digest, die Stufe `build` so, wie die Test-Skripte sie finden, Actions per Commit-SHA mit Version als Kommentar, dieselben Versionen von ruff und zizmor in `requirements-dev.txt` und `.pre-commit-config.yaml`, das gepinnte Paket in README, `SOURCES.md` und Architektur, `sources.json` passend zum Paket im `Dockerfile` und zu `SOURCES.md` (Bestandteile, Versionen, Repositories, Refs, Commits, Koordinaten, Lücken), derselbe Fingerabdruck des Schlüssels in Skript, README und Sicherheit |
+| `pytest` | die Werkzeuge mit 100 % Zeilen- und Zweigabdeckung (`--cov-fail-under=100`) und das Repository selbst: beide `FROM` per Digest, die Stufe `build` so, wie die Test-Skripte sie finden, Actions per Commit-SHA mit Version als Kommentar, dieselben Versionen von ruff und zizmor in `requirements-dev.txt` und `.pre-commit-config.yaml`, das gepinnte Paket in README, `SOURCES.md` und Architektur, die Rechte aufgerufener Workflows, `sources.json` passend zum Paket im `Dockerfile` und zu `SOURCES.md` (Bestandteile, Versionen, Repositories, Refs, Commits, Koordinaten, Lücken), derselbe Fingerabdruck des Schlüssels in Skript, README und Sicherheit |
 | `./tests/launcher/run.sh` | den Einstiegspunkt mit 100 % Zeilen- und Zweigabdeckung, siehe unten |
 | `./tests/image/run.sh IMAGE` | ein gebautes Image, so wie die CI es vor jeder Veröffentlichung prüft, siehe [README](../README.md#was-getestet-ist-und-was-nicht) |
 
@@ -82,7 +82,7 @@ Kein bestehender Test wird abgeschwächt, übersprungen oder gelöscht, um grün
 
 ## CI
 
-Ein Pull Request wird erst gemergt, wenn alle Jobs grün sind. Jeder Workflow liest das Repository nur (`contents: read`); Schreibrechte bekommen einzelne Jobs, die sie brauchen. Alle Actions sind per vollem Commit-SHA gepinnt, mit der Version als Kommentar.
+Ein Pull Request wird erst gemergt, wenn alle Jobs grün sind. Jeder Workflow liest das Repository nur (`contents: read`); Schreibrechte bekommen einzelne Jobs, die sie brauchen. Alle Actions sind per vollem Commit-SHA gepinnt, mit der Version als Kommentar. Ein aufgerufener Workflow verlangt in keinem Job mehr Rechte, als der aufrufende Job gewährt; GitHub prüft das beim Start für alle Jobs, auch für übersprungene, und `pytest` prüft es vorher.
 
 | Workflow | Wann | Was er tut |
 |---|---|---|
@@ -91,7 +91,8 @@ Ein Pull Request wird erst gemergt, wenn alle Jobs grün sind. Jeder Workflow li
 | Security (`security.yml`) | Pull Requests, Pushes auf `main`, montags, von Hand | gitleaks über die ganze Historie; `trivy config` über das Repository; wöchentlich und von Hand trivy über das veröffentlichte Image `latest`, je Plattform |
 | Signature (`signature.yml`) | Änderungen an `Dockerfile`, `keys/` und am Skript, montags, von Hand, vor jedem Release | prüft die PGP-Signatur des gepinnten Pakets, siehe [Sicherheit](sicherheit.md#signatur-des-herstellers) |
 | Image (`build.yml`) | Pull Requests und Pushes auf `main`, die das Image betreffen; von Hand; als Teil von Release | je Plattform die Composite Action `.github/actions/build-and-test`: Build ohne Cache, Image-Test, Scan mit trivy; `linux/amd64` auf `ubuntu-latest`, `linux/arm64` auf `ubuntu-26.04-arm`. Pull Requests und Forks bauen und testen nur. Pushes auf `main` und Release-Tags schieben jedes getestete Image per Digest, prüfen, dass es das getestete ist, legen je Plattform eine SBOM ab und veröffentlichen beide Images als einen Index unter den Tags mit der Herkunftsangabe |
-| Sources (`sources.yml`) | Pull Requests und Pushes auf `main`, die `sources.json`, `SOURCES.md`, `Dockerfile`, das Werkzeug oder den Workflow ändern; montags; als Teil von Release; von Hand mit einem Tag | baut das Quelltext-Archiv aus `sources.json` und hält es sieben Tage als Artefakt; von Hand hängt es das Archiv an ein bestehendes Release, siehe [Versionierung](versionierung.md#quelltext-archiv-nachträglich-anhängen) |
+| Sources (`sources.yml`) | Pull Requests und Pushes auf `main`, die `sources.json`, `SOURCES.md`, `Dockerfile`, das Werkzeug oder den Workflow ändern; montags; als Teil von Release und Attach sources | baut das Quelltext-Archiv aus `sources.json` und hält es sieben Tage als Artefakt; liest das Repository nur |
+| Attach sources (`sources-attach.yml`) | von Hand auf `main` mit einem Tag | prüft Tag und Paket, baut das Archiv mit Sources und hängt es an das bestehende Release, siehe [Versionierung](versionierung.md#quelltext-archiv-nachträglich-anhängen) |
 | Release (`release.yml`) | Push eines Tags `v*` | `release-check`, Signature und Sources, Image, GitHub-Release mit SBOMs und Quelltext-Archiv |
 | Vendor release (`versions.yml`) | montags 06:00 UTC, von Hand | sucht ein neues Paket des Herstellers, siehe [Versionierung](versionierung.md#ein-neues-paket-des-herstellers) |
 
@@ -99,7 +100,7 @@ Ein Pull Request wird erst gemergt, wenn alle Jobs grün sind. Jeder Workflow li
 
 **Ohne Cache.** Jeder Build lädt das Paket neu von willuhn.de und prüft es; die Basis-Images kommen per Digest. Ein Build dauert so nur wenige Minuten, und es gibt keinen Cache, den ein anderer Lauf vergiften könnte.
 
-**Sources nur bei Bedarf.** Ein Lauf lädt 13 Repositories und gut 30 Dateien von Maven Central und Eclipse, zusammen rund 150 MB, in etwa einer halben Minute. Maven Central drosselt Runner, die oft laden (HTTP 429). Der Workflow läuft deshalb nur, wenn sich etwas ändert, das in das Archiv eingeht, dazu jeden Montag, damit ein verschwundener Commit oder eine verschwundene Datei vor dem nächsten Release auffällt. Das Werkzeug versucht jeden Abruf mehrmals und wartet bei 429 so lange, wie der Server verlangt, höchstens zwei Minuten je Versuch. Pull Requests, Pushes und der Lauf am Montag halten die geprüften Dateien im Cache; geprüft wird jede Datei trotzdem bei jedem Lauf gegen ihre SHA-256. Ein Release und das nachträgliche Anhängen laden ohne Cache von der Quelle.
+**Sources nur bei Bedarf.** Ein Lauf lädt 13 Repositories und gut 30 Dateien von Maven Central und Eclipse, zusammen rund 150 MB, in etwa einer halben Minute. Maven Central drosselt Runner, die oft laden (HTTP 429). Der Workflow läuft deshalb nur, wenn sich etwas ändert, das in das Archiv eingeht, dazu jeden Montag, damit ein verschwundener Commit oder eine verschwundene Datei vor dem nächsten Release auffällt. Das Werkzeug versucht jeden Abruf mehrmals und wartet bei 429 so lange, wie der Server verlangt, höchstens zwei Minuten je Versuch. Pull Requests, Pushes und der Lauf am Montag halten die geprüften Dateien im Cache; geprüft wird jede Datei trotzdem bei jedem Lauf gegen ihre SHA-256. Ein Release und Attach sources laden ohne Cache von der Quelle.
 
 **Dependabot** schlägt jede Woche Updates vor, frühestens sieben Tage nach ihrem Erscheinen: für die Actions, die beiden Basis-Images im `Dockerfile` (eine neue Hauptversion von Java nicht), MariaDB im Beispiel (keine neue Hauptversion) und die Entwicklungswerkzeuge. Nicht erfasst sind das Image von MariaDB in `tests/image/run.sh`, die jar-Dateien in `tests/launcher/run.sh` und gitleaks in `security.yml`; sie hebt ein Maintainer von Hand an.
 
